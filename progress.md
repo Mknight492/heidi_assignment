@@ -8,11 +8,12 @@
 - [x] Add medical calculation libraries
 - [x] Environment setup (`.env.local` for API keys)
 - [x] Hello world with LLM response
+- [x] switch to using postgres as the vectorDB
 
 ## Phase 2: Data Structure & Guidelines (2-3 hours)
-- [ ] Create patient data model interface
-- [ ] Create guideline data structure interface (with evidence levels)
-- [ ] Create dose calculation interface (with confidence scores)
+- [x] Create patient data model interface
+- [x] Create guideline data structure interface (with evidence levels)
+- [x] Create dose calculation interface (with confidence scores)
 
 
 ## Phase 3: Core AI Components (3-4 hours)
