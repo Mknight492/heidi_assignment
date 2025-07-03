@@ -5,6 +5,17 @@ export async function POST(request: NextRequest) {
   try {
     const { message } = await request.json();
     
+    // Check environment variables
+    if (!process.env.AZURE_OPENAI_API_KEY) {
+      throw new Error('AZURE_OPENAI_API_KEY is not set');
+    }
+    if (!process.env.AZURE_OPENAI_ENDPOINT) {
+      throw new Error('AZURE_OPENAI_ENDPOINT is not set');
+    }
+    if (!process.env.AZURE_OPENAI_DEPLOYMENT_NAME) {
+      throw new Error('AZURE_OPENAI_DEPLOYMENT_NAME is not set');
+    }
+    
     // Initialize Azure OpenAI model
     const model = new AzureChatOpenAI({
       azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
@@ -27,11 +38,22 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('LLM API Error:', error);
+    
+    // Better error details
+    let errorMessage = 'Unknown error';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'object' && error !== null) {
+      errorMessage = JSON.stringify(error);
+    } else {
+      errorMessage = String(error);
+    }
+    
     return NextResponse.json(
       { 
         success: false, 
         error: 'Failed to generate response',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: errorMessage
       },
       { status: 500 }
     );
