@@ -3,11 +3,11 @@
 ## Phase 1: Foundation & Setup (2-3 hours)
 - [x] Frontend + Backend with CICD
 - [x] Basic Next.js setup
-- [ ] Add LangChain dependencies (`langchain`, `@langchain/openai`, `@langchain/community`)
-- [ ] Add vector database (`@pinecone-database/pinecone` or `chromadb`)
-- [ ] Add medical calculation libraries
-- [ ] Environment setup (`.env.local` for API keys)
-- [ ] Hello world with LLM response
+- [x] Add LangChain dependencies (`langchain`, `@langchain/azure-openai`, `@langchain/community`)
+- [x] Add vector database (`@pinecone-database/pinecone` or `chromadb`)
+- [x] Add medical calculation libraries
+- [x] Environment setup (`.env.local` for API keys)
+- [x] Hello world with LLM response
 
 ## Phase 2: Data Structure & Guidelines (2-3 hours)
 - [ ] Create patient data model interface
