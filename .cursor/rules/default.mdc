@@ -7,6 +7,8 @@ I'm doing a take home assignment for a job interview. The assignment is included
 My current plan is included in plan.md
 Ensure the plan and progress is updated with any changes
 
+The app is a next.js project with a React frontend and node.js backend
+
 
 [assignment.md](mdc:assignment.md)
 @plan.md

@@ -13,13 +13,14 @@
 - [ ] Create patient data model interface
 - [ ] Create guideline data structure interface (with evidence levels)
 - [ ] Create dose calculation interface (with confidence scores)
-- [ ] Add local croup guidelines to vector database (multiple regions)
-- [ ] Set up data validation schemas
+
 
 ## Phase 3: Core AI Components (3-4 hours)
 - [ ] Unified processing pipeline
 - [ ] Extract patient demographics from clinical text/transcript
 - [ ] Parse presenting complaint, history, examination
+- [ ] Add local croup guidelines to vector database (multiple regions)
+- [ ] Set up data validation schemas
 - [ ] RAG implementation
 - [ ] Query vector database for relevant local guidelines
 - [ ] Determine condition severity

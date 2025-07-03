@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ChatAzureOpenAI } from '@langchain/azure-openai';
+import { AzureChatOpenAI } from '@langchain/azure-openai';
 
 export async function POST(request: NextRequest) {
   try {
     const { message } = await request.json();
     
     // Initialize Azure OpenAI model
-    const model = new ChatAzureOpenAI({
+    const model = new AzureChatOpenAI({
       azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-      azureOpenAIApiEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+      azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
       azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
       temperature: 0.7,
     });
