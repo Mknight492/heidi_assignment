@@ -14,7 +14,7 @@ export default function Home() {
           priority
         />
         
-        <h1 className="text-2xl font-bold text-center">Heidi Medical AI Assignment!</h1>
+        <h1 className="text-2xl font-bold text-center">Heidi Medical AI Assignment</h1>
         
         <div className="flex gap-4 items-center flex-col sm:flex-row">
           <Link
