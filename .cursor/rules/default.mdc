@@ -1,0 +1,11 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+I'm doing a take home assignment for a job interview. The assignment is included below in assignment.md
+My current plan is included in plan.md
+
+[assignment.md](mdc:assignment.md)
+@plan.md
+@progress.md
