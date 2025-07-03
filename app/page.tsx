@@ -43,6 +43,31 @@ export default function Home() {
           </Link>
         </div>
 
+        {/* Therapeutic Guidelines Section */}
+        <div className="w-full max-w-2xl">
+          <h2 className="text-lg font-semibold mb-4 text-center">Therapeutic Guidelines Database</h2>
+          <div className="flex gap-4 items-center flex-col sm:flex-row">
+            <Link
+              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-purple-600 text-white gap-2 hover:bg-purple-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
+              href="/upload-tg"
+            >
+              Upload Guidelines
+            </Link>
+            <Link
+              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-indigo-600 text-white gap-2 hover:bg-indigo-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
+              href="/view-tg"
+            >
+              View Guidelines
+            </Link>
+            <Link
+              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-pink-600 text-white gap-2 hover:bg-pink-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
+              href="/test-embeddings"
+            >
+              Test Embeddings
+            </Link>
+          </div>
+        </div>
+
         <div className="text-center max-w-2xl">
           <h2 className="text-lg font-semibold mb-4">What's included:</h2>
           <ul className="text-sm space-y-2 text-left">
@@ -50,6 +75,9 @@ export default function Home() {
             <li>• <strong>Basic API Demo</strong> - Simple GET and POST requests</li>
             <li>• <strong>Users CRUD Demo</strong> - Full CRUD operations with a mock database</li>
             <li>• <strong>Database Test</strong> - Test PostgreSQL connection and pgvector setup</li>
+            <li>• <strong>Therapeutic Guidelines Upload</strong> - Upload JSON files to vector database</li>
+            <li>• <strong>Therapeutic Guidelines View</strong> - Search and view uploaded guidelines</li>
+            <li>• <strong>Embedding Service Test</strong> - Test Azure OpenAI text-embedding-3-large integration</li>
             <li>• <strong>API Routes</strong> - Examples of different HTTP methods</li>
             <li>• <strong>Frontend Integration</strong> - How to call APIs from React components</li>
           </ul>

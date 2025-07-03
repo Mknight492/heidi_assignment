@@ -1,36 +1,266 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Heidi Medical AI Assignment
 
-## Getting Started
+A Next.js application for uploading, storing, and searching Therapeutic Guidelines using Azure OpenAI embeddings and PostgreSQL with pgvector.
 
-First, run the development server:
+## 🚀 Features
+
+- **Therapeutic Guidelines Upload**: Upload JSON files containing medical guideline chunks
+- **Semantic Search**: Search guidelines using Azure OpenAI text-embedding-3-large
+- **Vector Database**: Store embeddings in PostgreSQL with pgvector extension
+- **Modern UI**: Beautiful, responsive interface for uploading and viewing guidelines
+- **Batch Processing**: Efficient processing of large guideline files
+- **Real-time Search**: Instant semantic search results
+
+## 📋 Prerequisites
+
+Before running this application, ensure you have:
+
+1. **Node.js** (v18 or higher)
+2. **PostgreSQL** (v12 or higher) with pgvector extension
+3. **Azure OpenAI** account with text-embedding-3-large deployment
+
+## 🛠️ Setup
+
+### 1. Clone and Install Dependencies
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd heidi_assignment
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a `.env.local` file in the root directory:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+# Database Configuration
+PGHOST=localhost
+PGPORT=5432
+PGDATABASE=heidi_medical_ai
+PGUSER=postgres
+PGPASSWORD=your_password
 
-## Learn More
+# Azure OpenAI Configuration
+AZURE_OPENAI_API_KEY=your_azure_openai_api_key
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_DEPLOYMENT_NAME=your_chat_deployment_name
+AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME=your_embedding_deployment_name
+AZURE_OPENAI_API_VERSION=2024-02-15-preview
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Database Setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Install pgvector extension**:
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **Create database** (if not exists):
+   ```sql
+   CREATE DATABASE heidi_medical_ai;
+   ```
 
-## Deploy on Vercel
+3. **Run the application** - it will automatically create the required tables:
+   ```bash
+   npm run dev
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📁 File Format
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The application expects JSON files in the following format:
+
+```json
+[
+  {
+    "text": "Clinical guideline content here...",
+    "metadata": {
+      "header1": "Main section title",
+      "header3": "Subsection title",
+      "header4": "Sub-subsection title (optional)",
+      "subchunk_id": 2,
+      "source": "source-file.md",
+      "chunk_id": 2,
+      "reference": "Therapeutic Guidelines: Antibiotic. Section name",
+      "length": 292
+    }
+  }
+]
+```
+
+### Example File Structure
+
+See `resources/tg.example.json` for a complete example with:
+- Neonatal herpes simplex infection guidelines
+- Clinical management flowcharts
+- Proper metadata structure
+
+## 🎯 How to Use
+
+### 1. Test the System
+
+Start by testing the embedding service:
+
+1. Navigate to **Test Embeddings** (`/test-embeddings`)
+2. Click "Test Embedding Service" to verify Azure OpenAI connection
+3. Try generating an embedding with custom text
+
+### 2. Upload Therapeutic Guidelines
+
+1. Navigate to **Upload Guidelines** (`/upload-tg`)
+2. **Drag and drop** or **click to select** your JSON file
+3. **Preview** the first 3 items to verify content
+4. **Choose options**:
+   - ✅ Clear existing guidelines (optional)
+5. Click **"Upload to Database"**
+6. **Monitor progress** and view results
+
+### 3. View and Search Guidelines
+
+1. Navigate to **View Guidelines** (`/view-tg`)
+2. **Browse all guidelines** or use the search function
+3. **Search by content** using semantic similarity
+4. **View detailed results** with metadata
+
+## 🔍 Search Capabilities
+
+### Semantic Search
+- Uses Azure OpenAI text-embedding-3-large (1536 dimensions)
+- Finds semantically similar content, not just exact matches
+- Example queries:
+  - "neonatal infection treatment"
+  - "herpes simplex management"
+  - "pediatric antiviral therapy"
+
+### Search Results
+Each result shows:
+- **Content preview** (first 500 characters)
+- **Header information** (section titles)
+- **Metadata** (source, chunk ID, reference)
+- **Similarity score** (vector distance)
+
+## 🏗️ Architecture
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Next.js API    │    │   PostgreSQL    │
+│   (React)       │◄──►│   Routes         │◄──►│   + pgvector    │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+         │                       │                       │
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Upload UI     │    │   Azure OpenAI   │    │   Vector Store  │
+│   Search UI     │    │   Embeddings     │    │   (1536 dims)   │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+```
+
+## 📊 Database Schema
+
+### therapeutic_guidelines Table
+```sql
+CREATE TABLE therapeutic_guidelines (
+  id SERIAL PRIMARY KEY,
+  content TEXT NOT NULL,
+  embedding vector(1536),
+  metadata JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Vector Index
+```sql
+CREATE INDEX therapeutic_guidelines_embedding_idx 
+ON therapeutic_guidelines 
+USING ivfflat (embedding vector_cosine_ops)
+WITH (lists = 100);
+```
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+1. **"Embedding service test failed"**
+   - Check Azure OpenAI API key and endpoint
+   - Verify embedding deployment name
+   - Ensure API version is correct
+
+2. **"Database initialization failed"**
+   - Check PostgreSQL connection
+   - Verify pgvector extension is installed
+   - Check database credentials
+
+3. **"Invalid JSON format"**
+   - Ensure file is valid JSON array
+   - Check required fields: `text` and `metadata`
+   - Verify file structure matches example
+
+4. **"Vector storage error"**
+   - Check pgvector extension installation
+   - Verify database permissions
+   - Ensure embedding dimensions are 1536 or less
+
+### Performance Tips
+
+- **Batch Processing**: Files are processed in batches of 10 for efficiency
+- **Index Optimization**: Vector index uses 100 lists for optimal performance
+- **Memory Management**: Embeddings are truncated to 1536 dimensions for pgvector compatibility
+
+## 🔧 API Endpoints
+
+### Upload and Search
+- `POST /api/upload-tg` - Upload therapeutic guidelines
+- `GET /api/therapeutic-guidelines` - Get all guidelines
+- `POST /api/therapeutic-guidelines` - Search guidelines
+
+### Testing
+- `GET /api/test-embeddings` - Test embedding service
+- `POST /api/test-embeddings` - Generate test embedding
+- `GET /api/test-vector-format` - Test vector format
+
+## 📈 Monitoring
+
+### Upload Progress
+- Real-time progress tracking
+- Success/failure counts
+- Detailed error reporting
+- Batch processing status
+
+### Search Performance
+- Response time monitoring
+- Result count tracking
+- Semantic similarity scores
+
+## 🔒 Security Considerations
+
+- **API Keys**: Store securely in environment variables
+- **Database**: Use strong passwords and proper access controls
+- **File Upload**: Validate JSON structure and content
+- **Rate Limiting**: Consider implementing for production use
+
+## 🚀 Deployment
+
+### Local Development
+```bash
+npm run dev
+```
+
+### Production Build
+```bash
+npm run build
+npm start
+```
+
+### Environment Setup
+Ensure all environment variables are set in production:
+- Database connection details
+- Azure OpenAI credentials
+- Proper security configurations
+
+## 📝 License
+
+This project is part of the Heidi Medical AI assignment.
+
+## 🤝 Contributing
+
+This is an assignment project. For questions or issues, please refer to the assignment guidelines.

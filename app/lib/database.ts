@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { Guideline, VectorizedGuideline } from '../types/medical';
+import { Guideline, VectorizedGuideline, TherapeuticGuidelineChunk, VectorizedTherapeuticGuideline } from '../types/medical';
 
 // Database connection pool
 const pool = new Pool({
@@ -40,10 +40,29 @@ export async function initializeDatabase() {
       );
     `);
     
-    // Create index for vector similarity search
+    // Create therapeutic_guidelines table for the new structure
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS therapeutic_guidelines (
+        id SERIAL PRIMARY KEY,
+        content TEXT NOT NULL,
+        embedding vector(1536),
+        metadata JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    // Create index for vector similarity search on guidelines
     await client.query(`
       CREATE INDEX IF NOT EXISTS guidelines_embedding_idx 
       ON guidelines 
+      USING ivfflat (embedding vector_cosine_ops)
+      WITH (lists = 100);
+    `);
+    
+    // Create index for vector similarity search on therapeutic_guidelines
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS therapeutic_guidelines_embedding_idx 
+      ON therapeutic_guidelines 
       USING ivfflat (embedding vector_cosine_ops)
       WITH (lists = 100);
     `);
@@ -65,7 +84,7 @@ export async function storeGuideline(guideline: Guideline, embedding: number[]) 
       INSERT INTO guidelines (
         condition, severity, region, evidence_level, version, 
         last_updated, source, content, embedding, metadata
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::vector, $10)
       RETURNING id;
     `;
     
@@ -79,6 +98,9 @@ export async function storeGuideline(guideline: Guideline, embedding: number[]) 
       source: guideline.source,
     };
     
+    // Convert embedding array to proper PostgreSQL vector format
+    const vectorString = `[${embedding.join(',')}]`;
+    
     const values = [
       guideline.condition,
       guideline.severity,
@@ -88,7 +110,7 @@ export async function storeGuideline(guideline: Guideline, embedding: number[]) 
       guideline.lastUpdated,
       guideline.source,
       guideline.content,
-      embedding,
+      vectorString,
       JSON.stringify(metadata)
     ];
     
@@ -143,11 +165,14 @@ export async function searchGuidelines(
     
     paramCount++;
     query += `
-      ORDER BY embedding <=> $${paramCount}
+      ORDER BY embedding <=> $${paramCount}::vector
       LIMIT $${paramCount + 1};
     `;
     
-    values.push(queryEmbedding, limit);
+    // Convert query embedding to proper PostgreSQL vector format
+    const vectorString = `[${queryEmbedding.join(',')}]`;
+    
+    values.push(vectorString, limit);
     
     const result = await client.query(query, values);
     
@@ -217,6 +242,108 @@ export async function clearGuidelines() {
     console.log('All guidelines cleared');
   } catch (error) {
     console.error('Error clearing guidelines:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+// Store therapeutic guideline chunk with embedding
+export async function storeTherapeuticGuidelineChunk(chunk: TherapeuticGuidelineChunk, embedding: number[]) {
+  const client = await pool.connect();
+  try {
+    const query = `
+      INSERT INTO therapeutic_guidelines (content, embedding, metadata)
+      VALUES ($1, $2::vector, $3)
+      RETURNING id;
+    `;
+    
+    // Convert embedding array to proper PostgreSQL vector format
+    const vectorString = `[${embedding.join(',')}]`;
+    
+    const values = [
+      chunk.text,
+      vectorString,
+      JSON.stringify(chunk.metadata)
+    ];
+    
+    const result = await client.query(query, values);
+    return result.rows[0].id;
+  } catch (error) {
+    console.error('Error storing therapeutic guideline chunk:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+// Search therapeutic guidelines by similarity
+export async function searchTherapeuticGuidelines(
+  queryEmbedding: number[],
+  limit: number = 5
+): Promise<VectorizedTherapeuticGuideline[]> {
+  const client = await pool.connect();
+  try {
+    const query = `
+      SELECT id, content, embedding, metadata
+      FROM therapeutic_guidelines
+      ORDER BY embedding <=> $1::vector
+      LIMIT $2;
+    `;
+    
+    // Convert query embedding to proper PostgreSQL vector format
+    const vectorString = `[${queryEmbedding.join(',')}]`;
+    
+    const result = await client.query(query, [vectorString, limit]);
+    
+    return result.rows.map(row => ({
+      id: row.id.toString(),
+      content: row.content,
+      embedding: row.embedding,
+      metadata: row.metadata
+    }));
+  } catch (error) {
+    console.error('Error searching therapeutic guidelines:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+// Get all therapeutic guidelines (for testing)
+export async function getAllTherapeuticGuidelines(): Promise<VectorizedTherapeuticGuideline[]> {
+  const client = await pool.connect();
+  try {
+    const query = `
+      SELECT id, content, embedding, metadata
+      FROM therapeutic_guidelines
+      ORDER BY id;
+    `;
+    
+    const result = await client.query(query);
+    
+    return result.rows.map(row => ({
+      id: row.id.toString(),
+      content: row.content,
+      embedding: row.embedding,
+      metadata: row.metadata
+    }));
+  } catch (error) {
+    console.error('Error getting all therapeutic guidelines:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+// Clear therapeutic guidelines table
+export async function clearTherapeuticGuidelines() {
+  const client = await pool.connect();
+  try {
+    await client.query('DELETE FROM therapeutic_guidelines;');
+    console.log('Therapeutic guidelines table cleared');
+  } catch (error) {
+    console.error('Error clearing therapeutic guidelines:', error);
     throw error;
   } finally {
     client.release();

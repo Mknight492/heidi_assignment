@@ -95,4 +95,35 @@ export interface VectorizedGuideline {
     version: string;
     lastUpdated: Date;
   };
+}
+
+// New interface for Therapeutic Guidelines data structure
+export interface TherapeuticGuidelineChunk {
+  text: string;
+  metadata: {
+    header1?: string;
+    header3?: string;
+    header4?: string;
+    subchunk_id: number;
+    source: string;
+    chunk_id: number;
+    reference: string;
+    length: number;
+  };
+}
+
+export interface VectorizedTherapeuticGuideline {
+  id: string;
+  content: string;
+  embedding: number[];
+  metadata: {
+    header1?: string;
+    header3?: string;
+    header4?: string;
+    subchunk_id: number;
+    source: string;
+    chunk_id: number;
+    reference: string;
+    length: number;
+  };
 } 
