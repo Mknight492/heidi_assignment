@@ -207,6 +207,12 @@ Plan:
             >
               Test Embeddings
             </Link>
+            <Link
+              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-teal-600 text-white gap-2 hover:bg-teal-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
+              href="/rag-test"
+            >
+              RAG Test
+            </Link>
           </div>
         </div>
 
@@ -220,6 +226,7 @@ Plan:
             <li>• <strong>Database Test</strong> - Test PostgreSQL connection and pgvector setup</li>
             <li>• <strong>Therapeutic Guidelines Upload</strong> - Upload JSON files to vector database</li>
             <li>• <strong>Therapeutic Guidelines View</strong> - Search and view uploaded guidelines</li>
+            <li>• <strong>RAG Test</strong> - Retrieval-Augmented Generation with therapeutic guidelines</li>
             <li>• <strong>Embedding Service Test</strong> - Test Azure OpenAI text-embedding-3-large integration</li>
             <li>• <strong>API Routes</strong> - Examples of different HTTP methods</li>
             <li>• <strong>Frontend Integration</strong> - How to call APIs from React components</li>

@@ -41,8 +41,8 @@
   - [x] Optimize database connection pooling
   - [x] Add progress tracking and performance metrics
   - [x] Implement chunked embedding generation for large batches
-- [ ] RAG implementation
-- [ ] Query vector database for relevant local guidelines
+- [x] RAG implementation
+- [x] Query vector database for relevant local guidelines
 - [x] Determine condition severity
 - [x] Calculate weight-based medication doses with evidence levels
 - [x] Generate comprehensive decision support plan
@@ -64,7 +64,7 @@
 - [x] Create single clinical decision API (`/api/management-plan`)
 - [x] Accept clinical text/transcript input (multiple formats)
 - [x] Extract patient data and condition
-- [ ] Query vector database for relevant local guidelines
+- [x] Query vector database for relevant local guidelines
 - [x] Calculate weight-based medication doses with evidence levels
 - [x] Generate comprehensive decision support plan
 - [x] Return all results in single response with confidence scores
@@ -214,4 +214,37 @@
 - [x] Created modern upload interface with drag-and-drop, preview, and progress tracking
 - [x] Created modern viewing interface with search functionality and detailed results
 - [x] Added navigation links to main page
-- [x] Integrated with Azure OpenAI text-embedding-3-large for real embeddings 
+- [x] Integrated with Azure OpenAI text-embedding-3-large for real embeddings
+
+### RAG (Retrieval-Augmented Generation) Implementation
+- [x] Created RAG-specific prompts (`rag-guidelines.ts`) for filtering, synthesis, and recommendation generation
+- [x] Implemented `RAGService` class with 4-step pipeline:
+  - [x] **Step 1: Retrieval** - Semantic search for relevant guideline chunks
+  - [x] **Step 2: Filtering & Ranking** - AI-powered relevance scoring and filtering
+  - [x] **Step 3: Synthesis** - Information synthesis from multiple guideline sources
+  - [x] **Step 4: Recommendation Generation** - Evidence-based final recommendations
+- [x] Created `/api/rag-guidelines` endpoint for RAG processing
+- [x] Built comprehensive RAG test interface (`/rag-test`) with:
+  - [x] Patient information input
+  - [x] Clinical scenario configuration
+  - [x] Real-time processing indicators
+  - [x] Detailed results display with metrics, synthesis, and recommendations
+  - [x] Retrieved chunks visualization with relevance scores
+- [x] Added navigation link to main page
+- [x] Integrated with existing therapeutic guidelines database
+- [x] Implemented error handling and fallback mechanisms
+- [x] Added performance metrics and processing time tracking 
+
+Must haves:
+- [ ] Safety considerations (e.g. label site as PoC)
+- [ ] function calls for dose calulations
+
+Additional features/considerations
+- [ ] different regions
+- [ ] agentic search
+- [ ] reranking
+- [ ] web search
+- [ ] multi-modal search
+- [ ] knowledge graph
+- [ ] comparison tool for making changes
+- [ ] test suite

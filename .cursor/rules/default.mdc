@@ -6,6 +6,7 @@ alwaysApply: true
 I'm doing a take home assignment for a job interview. The assignment is included below in assignment.md
 My current plan is included in plan.md
 Ensure the plan and progress is updated with any changes
+Ensure the readme is updated with any significant changes
 
 The app is a next.js project with a React frontend and node.js backend
 
@@ -14,3 +15,4 @@ When using promppts these should be the ./app/prompts folder
 [assignment.md](mdc:assignment.md)
 @plan.md
 @progress.md
+[README.md](mdc:README.md)
