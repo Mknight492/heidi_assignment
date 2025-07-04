@@ -14,6 +14,9 @@ When using promppts these should be the ./app/prompts folder
 
 examples of the data uploaded to RAG can be found in /example-resources/
 
+the main backend page is ./app/api/management-plan/route.ts
+the main frontend page is /app/page
+
 [assignment.md](mdc:assignment.md)
 @plan.md
 @progress.md

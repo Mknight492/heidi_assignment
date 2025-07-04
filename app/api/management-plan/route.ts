@@ -252,27 +252,44 @@ export async function POST(request: NextRequest) {
          0)) / 2
     );
 
-    // Add guideline links only to highly relevant guidelines
-    const guidelinesWithLinks = relevantGuidelines.map(guideline => {
-      // Only add links to chunks with high relevance score (>= 70) or if they're mentioned in recommendations
-      const hasHighRelevance = guideline.relevanceScore && guideline.relevanceScore >= 70;
-      const isMentionedInRecommendations = ragResult?.finalRecommendation?.guidelineSources?.some(
-        source => source.toLowerCase().includes(guideline.metadata.source.toLowerCase())
-      );
-      
-      const shouldAddLink = hasHighRelevance || isMentionedInRecommendations;
-      const link = shouldAddLink ? getGuidelineLink(guideline.metadata.source) : null;
-      
-      return {
-        ...guideline,
-        metadata: {
-          ...guideline.metadata,
-          guidelineLink: link,
-          isHighlyRelevant: hasHighRelevance,
-          relevanceScore: guideline.relevanceScore || 0
-        }
-      };
+    // Group guidelines by source and find the most relevant chunk from each source
+    const guidelinesBySource = new Map<string, any[]>();
+    relevantGuidelines.forEach(guideline => {
+      const source = guideline.metadata.source;
+      if (!guidelinesBySource.has(source)) {
+        guidelinesBySource.set(source, []);
+      }
+      guidelinesBySource.get(source)!.push(guideline);
     });
+
+    // Find the most relevant chunk from each source
+    const bestChunksBySource = Array.from(guidelinesBySource.entries()).map(([source, chunks]) => {
+      return chunks.reduce((best, current) => {
+        const currentScore = current.relevanceScore || 0;
+        const bestScore = best.relevanceScore || 0;
+        return currentScore > bestScore ? current : best;
+      });
+    });
+
+    // Find the single most relevant guideline across all sources
+    const mostRelevantGuideline = bestChunksBySource.length > 0 
+      ? bestChunksBySource.reduce((mostRelevant, current) => {
+          const currentScore = current.relevanceScore || 0;
+          const mostRelevantScore = mostRelevant.relevanceScore || 0;
+          return currentScore > mostRelevantScore ? current : mostRelevant;
+        })
+      : null;
+
+    // Add guideline link to the most relevant guideline
+    const guidelinesWithLinks = mostRelevantGuideline ? [{
+      ...mostRelevantGuideline,
+      metadata: {
+        ...mostRelevantGuideline.metadata,
+        guidelineLink: getGuidelineLink(mostRelevantGuideline.metadata.source),
+        isMostRelevant: true,
+        relevanceScore: mostRelevantGuideline.relevanceScore || 0
+      }
+    }] : [];
 
     // Construct the final result
     const result: ClinicalDecision = {
