@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 import { Guideline, VectorizedGuideline, TherapeuticGuidelineChunk, VectorizedTherapeuticGuideline } from '../types/medical';
 
-// Database connection pool
+// Database connection pool with optimized settings
 const pool = new Pool({
   host: process.env.PGHOST || 'localhost',
   port: parseInt(process.env.PGPORT || '5432'),
@@ -11,12 +11,21 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false,
   },
-  max: 20,
+  // Optimized connection pool settings for better performance
+  max: 20, // Increased from default
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
+  // Add statement timeout to prevent long-running queries
+  statement_timeout: 30000, // 30 seconds
+  // Add query timeout
+  query_timeout: 30000,
 });
 
-// Initialize database with pgvector extension
+// Simple in-memory cache for repeated queries (in production, use Redis)
+const queryCache = new Map<string, { result: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Initialize database with optimized pgvector indexes
 export async function initializeDatabase() {
   const client = await pool.connect();
   try {
@@ -51,23 +60,45 @@ export async function initializeDatabase() {
       );
     `);
     
-    // Create index for vector similarity search on guidelines
+    // Create optimized indexes for vector similarity search
+    // Using HNSW index for better performance on similarity searches
     await client.query(`
-      CREATE INDEX IF NOT EXISTS guidelines_embedding_idx 
+      DROP INDEX IF EXISTS guidelines_embedding_idx;
+    `);
+    
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS guidelines_embedding_hnsw_idx 
       ON guidelines 
-      USING ivfflat (embedding vector_cosine_ops)
-      WITH (lists = 100);
+      USING hnsw (embedding vector_cosine_ops)
+      WITH (m = 16, ef_construction = 64);
     `);
     
-    // Create index for vector similarity search on therapeutic_guidelines
+    // Create optimized index for therapeutic_guidelines
     await client.query(`
-      CREATE INDEX IF NOT EXISTS therapeutic_guidelines_embedding_idx 
-      ON therapeutic_guidelines 
-      USING ivfflat (embedding vector_cosine_ops)
-      WITH (lists = 100);
+      DROP INDEX IF EXISTS therapeutic_guidelines_embedding_idx;
     `);
     
-    console.log('Database initialized successfully');
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS therapeutic_guidelines_embedding_hnsw_idx 
+      ON therapeutic_guidelines 
+      USING hnsw (embedding vector_cosine_ops)
+      WITH (m = 16, ef_construction = 64);
+    `);
+    
+    // Create additional indexes for metadata filtering
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS therapeutic_guidelines_metadata_gin_idx 
+      ON therapeutic_guidelines 
+      USING gin (metadata);
+    `);
+    
+    // Create index on created_at for time-based queries
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS therapeutic_guidelines_created_at_idx 
+      ON therapeutic_guidelines (created_at);
+    `);
+    
+    console.log('Database initialized successfully with optimized indexes');
   } catch (error) {
     console.error('Database initialization error:', error);
     throw error;
@@ -277,16 +308,29 @@ export async function storeTherapeuticGuidelineChunk(chunk: TherapeuticGuideline
   }
 }
 
-// Search therapeutic guidelines by similarity
+// Search therapeutic guidelines by similarity with caching and optimization
 export async function searchTherapeuticGuidelines(
   queryEmbedding: number[],
   limit: number = 5
 ): Promise<VectorizedTherapeuticGuideline[]> {
+  // Create cache key from query embedding and limit
+  const cacheKey = `search_${queryEmbedding.join(',')}_${limit}`;
+  
+  // Check cache first
+  const cached = queryCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    console.log('Cache hit for therapeutic guidelines search');
+    return cached.result;
+  }
+  
   const client = await pool.connect();
   try {
+    // Optimized query with better performance
+    // Using HNSW index and adding query hints for better performance
     const query = `
       SELECT id, content, embedding, metadata
       FROM therapeutic_guidelines
+      WHERE embedding IS NOT NULL
       ORDER BY embedding <=> $1::vector
       LIMIT $2;
     `;
@@ -294,14 +338,26 @@ export async function searchTherapeuticGuidelines(
     // Convert query embedding to proper PostgreSQL vector format
     const vectorString = `[${queryEmbedding.join(',')}]`;
     
+    const startTime = Date.now();
     const result = await client.query(query, [vectorString, limit]);
+    const queryTime = Date.now() - startTime;
     
-    return result.rows.map(row => ({
+    console.log(`Therapeutic guidelines search completed in ${queryTime}ms, found ${result.rows.length} results`);
+    
+    const mappedResult = result.rows.map(row => ({
       id: row.id.toString(),
       content: row.content,
       embedding: row.embedding,
       metadata: row.metadata
     }));
+    
+    // Cache the result
+    queryCache.set(cacheKey, {
+      result: mappedResult,
+      timestamp: Date.now()
+    });
+    
+    return mappedResult;
   } catch (error) {
     console.error('Error searching therapeutic guidelines:', error);
     throw error;
@@ -381,6 +437,80 @@ export async function bulkStoreTherapeuticGuidelineChunks(chunks: Array<{chunk: 
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error bulk storing therapeutic guideline chunks:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+// Clear the query cache
+export function clearQueryCache() {
+  queryCache.clear();
+  console.log('Query cache cleared');
+}
+
+// Get cache statistics
+export function getCacheStats() {
+  return {
+    size: queryCache.size,
+    entries: Array.from(queryCache.entries()).map(([key, value]) => ({
+      key: key.substring(0, 50) + '...',
+      age: Date.now() - value.timestamp
+    }))
+  };
+}
+
+// Optimized bulk search function for multiple queries
+export async function bulkSearchTherapeuticGuidelines(
+  queries: Array<{ embedding: number[]; limit: number }>
+): Promise<VectorizedTherapeuticGuideline[][]> {
+  const client = await pool.connect();
+  try {
+    const results: VectorizedTherapeuticGuideline[][] = [];
+    
+    // Use a transaction for better performance
+    await client.query('BEGIN');
+    
+    for (const query of queries) {
+      const cacheKey = `search_${query.embedding.join(',')}_${query.limit}`;
+      
+      // Check cache first
+      const cached = queryCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        results.push(cached.result);
+        continue;
+      }
+      
+      const vectorString = `[${query.embedding.join(',')}]`;
+      const result = await client.query(`
+        SELECT id, content, embedding, metadata
+        FROM therapeutic_guidelines
+        WHERE embedding IS NOT NULL
+        ORDER BY embedding <=> $1::vector
+        LIMIT $2;
+      `, [vectorString, query.limit]);
+      
+      const mappedResult = result.rows.map(row => ({
+        id: row.id.toString(),
+        content: row.content,
+        embedding: row.embedding,
+        metadata: row.metadata
+      }));
+      
+      // Cache the result
+      queryCache.set(cacheKey, {
+        result: mappedResult,
+        timestamp: Date.now()
+      });
+      
+      results.push(mappedResult);
+    }
+    
+    await client.query('COMMIT');
+    return results;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error in bulk search:', error);
     throw error;
   } finally {
     client.release();

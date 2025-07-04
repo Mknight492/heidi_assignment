@@ -152,10 +152,6 @@ Plan:
               <h3 className="text-green-800 font-bold mb-4">Management Plan:</h3>
               <div className="space-y-4">
                 <div className="bg-gray-50 border border-gray-200 rounded p-3">
-                  <h4 className="font-bold text-gray-900">Patient Information:</h4>
-                  <pre className="text-sm text-gray-900 bg-white p-2 rounded border overflow-auto">{JSON.stringify(result.patient, null, 2)}</pre>
-                </div>
-                <div className="bg-gray-50 border border-gray-200 rounded p-3">
                   <h4 className="font-bold text-gray-900">Condition & Severity:</h4>
                   <p className="text-gray-900">{result.condition} - {result.severity}</p>
                 </div>
@@ -431,6 +427,12 @@ Plan:
                 href="/rag-test"
               >
                 RAG Test
+              </Link>
+              <Link
+                className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-red-600 text-white gap-2 hover:bg-red-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
+                href="/rag-performance-test"
+              >
+                Performance Test
               </Link>
             </div>
           </div>

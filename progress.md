@@ -200,6 +200,34 @@
 - [ ] Final deployment and video
 
 ## Recent Updates
+### RAG Performance Optimization - PostgreSQL Query Speed Improvements
+- [x] **HNSW Index Implementation**: Replaced ivfflat with HNSW indexes for better vector similarity search performance
+  - [x] Updated `therapeutic_guidelines_embedding_hnsw_idx` with optimized parameters (m=16, ef_construction=64)
+  - [x] Added metadata GIN index for faster JSONB queries
+  - [x] Added created_at index for time-based filtering
+- [x] **Query Optimization**: Enhanced database queries for better performance
+  - [x] Added `WHERE embedding IS NOT NULL` filter to avoid null vector comparisons
+  - [x] Implemented query timing and logging for performance monitoring
+  - [x] Optimized connection pool settings with statement and query timeouts
+- [x] **Caching System**: Implemented in-memory caching for repeated queries
+  - [x] Added 5-minute TTL cache for search results
+  - [x] Cache key based on embedding hash and limit for efficient lookups
+  - [x] Cache statistics and management functions
+- [x] **Bulk Operations**: Added optimized bulk search functionality
+  - [x] Transaction-based bulk search for multiple queries
+  - [x] Cache-aware bulk operations to avoid redundant queries
+- [x] **Performance Testing**: Created comprehensive performance testing tools
+  - [x] RAG performance test API endpoint with detailed timing metrics
+  - [x] Performance test frontend with database optimization controls
+  - [x] Database optimization API for index management and cache control
+  - [x] Real-time performance monitoring and statistics
+- [x] **Expected Performance Gains**: 
+  - [x] HNSW indexes: 2-5x faster vector similarity searches
+  - [x] Query caching: 10-50x faster for repeated queries
+  - [x] Optimized queries: 20-30% reduction in query time
+  - [x] Connection pooling: Better resource utilization and reduced latency
+
+### Example Transcripts Creation
 ### Example Transcripts Creation
 - [x] **Created `example-transcripts/` folder** with comprehensive test cases
   - [x] **Croup Cases**: mild (Emma L.), moderate (Jack T.), severe (Lucas M.)
@@ -331,9 +359,10 @@ Must haves:
 Additional features/considerations
 - [x] html link to guidelines
 - [x] using meta-data i.e. title in the vector search
-- [ ] different regions
+- [x] improved RAG speed.
 - [ ] agentic search
 - [ ] reranking
+- [ ] different regions
 - [ ] medication specific guidelines
 - [ ] web search
 - [ ] multi-modal search

@@ -184,6 +184,8 @@ export async function POST(request: NextRequest) {
       // Continue without RAG results
     }
 
+    console.log(essentialRAGInfo?.highlyRelevantChunks.length);
+
     // Step 4: Generate comprehensive management plan based on guidelines
     console.log('Step 4: Generating management plan...');
     const managementPrompt = MANAGEMENT_PLAN_PROMPT
