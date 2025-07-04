@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import ReactMarkdown from 'react-markdown';
 
 export default function Home() {
   const [transcript, setTranscript] = useState(`Patient: Jack T.
@@ -143,7 +144,9 @@ Plan:
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded p-3">
                   <h4 className="font-bold text-gray-900">Management Plan:</h4>
-                  <p className="text-gray-700 whitespace-pre-wrap">{result.managementPlan}</p>
+                  <div className="prose prose-sm text-gray-700 max-w-none">
+                    <ReactMarkdown>{result.managementPlan}</ReactMarkdown>
+                  </div>
                 </div>
                 {result.medicationRecommendations && result.medicationRecommendations.length > 0 && (
                   <div className="bg-gray-50 border border-gray-200 rounded p-3">
