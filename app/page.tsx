@@ -5,7 +5,40 @@ import Link from "next/link";
 import { useState } from "react";
 
 export default function Home() {
-  const [transcript, setTranscript] = useState('');
+  const [transcript, setTranscript] = useState(`Patient: Jack T.
+DOB: 12/03/2022
+Age: 3 years
+Weight: 14.2 kg
+
+Presenting complaint:
+Jack presented with a 2-day history of barky cough, hoarse voice, and low-grade fever. Symptoms worsened overnight, with increased work of breathing and stridor noted at rest this morning. No history of choking, foreign body aspiration, or recent travel. No known sick contacts outside the household. 
+
+History:
+- Onset of URTI symptoms 2 days ago, including rhinorrhoea and dry cough
+- Barking cough began yesterday evening, hoarseness and intermittent inspiratory stridor overnight
+- Mild fever (up to 38.4°C) controlled with paracetamol
+- No cyanosis or apnoea reported
+- Fully vaccinated and developmentally appropriate for age
+- No history of asthma or other chronic respiratory illness
+- No previous episodes of croup
+- No drug allergies
+
+Examination:
+- Alert, mildly distressed, sitting upright with audible inspiratory stridor at rest
+- Barky cough noted during assessment
+- Mild suprasternal and intercostal recession
+- RR 32, HR 124, SpO2 97% on room air, T 37.9°C
+- Chest: clear air entry bilaterally, no wheeze or crackles
+- ENT: mild erythema of oropharynx, no tonsillar exudate
+- CVS: normal S1/S2, no murmurs
+- Neurological: alert, interactive, normal tone and reflexes
+
+Assessment:
+Jack presents with classic features of moderate croup (laryngotracheobronchitis), likely viral in origin. No signs of severe respiratory distress or impending airway obstruction. No signs suggestive of bacterial tracheitis or other differentials (e.g. foreign body, epiglottitis).
+
+Plan:
+- Administer corticosteroids
+- Plan as per local guidelines for croup`);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
@@ -57,7 +90,7 @@ export default function Home() {
         
         {/* Main Clinical Decision Support Interface */}
         <div className="w-full bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold mb-4 text-center">Clinical Decision Support System</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">Clinical Decision Support System</h2>
           <p className="text-gray-600 mb-6 text-center">
             Enter a patient transcript to generate a comprehensive management plan with medication dosing recommendations.
           </p>
@@ -72,7 +105,7 @@ export default function Home() {
                 value={transcript}
                 onChange={(e) => setTranscript(e.target.value)}
                 placeholder="Enter the patient's clinical transcript here. Include age, weight, presenting complaint, history, and examination findings..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                 rows={8}
                 required
               />
@@ -96,28 +129,28 @@ export default function Home() {
 
           {result && (
             <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-              <h3 className="text-green-800 font-medium mb-4">Management Plan:</h3>
+              <h3 className="text-green-800 font-bold mb-4">Management Plan:</h3>
               <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold text-gray-800">Patient Information:</h4>
-                  <pre className="text-sm bg-white p-2 rounded border overflow-auto">{JSON.stringify(result.patient, null, 2)}</pre>
+                <div className="bg-gray-50 border border-gray-200 rounded p-3">
+                  <h4 className="font-bold text-gray-900">Patient Information:</h4>
+                  <pre className="text-sm text-gray-900 bg-white p-2 rounded border overflow-auto">{JSON.stringify(result.patient, null, 2)}</pre>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-gray-800">Condition & Severity:</h4>
-                  <p className="text-gray-700">{result.condition} - {result.severity}</p>
+                <div className="bg-gray-50 border border-gray-200 rounded p-3">
+                  <h4 className="font-bold text-gray-900">Condition & Severity:</h4>
+                  <p className="text-gray-900">{result.condition} - {result.severity}</p>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-gray-800">Management Plan:</h4>
+                <div className="bg-gray-50 border border-gray-200 rounded p-3">
+                  <h4 className="font-bold text-gray-900">Management Plan:</h4>
                   <p className="text-gray-700 whitespace-pre-wrap">{result.managementPlan}</p>
                 </div>
                 {result.medicationRecommendations && result.medicationRecommendations.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-gray-800">Medication Recommendations:</h4>
-                    <pre className="text-sm bg-white p-2 rounded border overflow-auto">{JSON.stringify(result.medicationRecommendations, null, 2)}</pre>
+                  <div className="bg-gray-50 border border-gray-200 rounded p-3">
+                    <h4 className="font-bold text-gray-900">Medication Recommendations:</h4>
+                    <pre className="text-sm text-gray-900 bg-white p-2 rounded border overflow-auto">{JSON.stringify(result.medicationRecommendations, null, 2)}</pre>
                   </div>
                 )}
-                <div>
-                  <h4 className="font-semibold text-gray-800">Confidence Score:</h4>
+                <div className="bg-gray-50 border border-gray-200 rounded p-3">
+                  <h4 className="font-bold text-gray-900">Confidence Score:</h4>
                   <p className="text-gray-700">{result.confidence}%</p>
                 </div>
               </div>

@@ -96,7 +96,7 @@ export default function ViewTherapeuticGuidelines() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search guidelines by content or headers..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white"
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 />
               </div>

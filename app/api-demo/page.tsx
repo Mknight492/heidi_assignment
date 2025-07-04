@@ -78,7 +78,7 @@ export default function ApiDemo() {
                 value={inputData}
                 onChange={(e) => setInputData(e.target.value)}
                 placeholder="Enter some data to send..."
-                className="w-full p-2 border border-gray-300 rounded"
+                className="w-full p-2 border border-gray-300 rounded text-gray-900 bg-white"
               />
             </div>
             <button

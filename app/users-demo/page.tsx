@@ -186,13 +186,13 @@ export default function UsersDemo() {
                         type="text"
                         value={editingUser.name}
                         onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
-                        className="w-full p-1 border border-gray-300 rounded text-sm"
+                        className="w-full p-1 border border-gray-300 rounded text-sm text-gray-900 bg-white"
                       />
                       <input
                         type="email"
                         value={editingUser.email}
                         onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
-                        className="w-full p-1 border border-gray-300 rounded text-sm"
+                        className="w-full p-1 border border-gray-300 rounded text-sm text-gray-900 bg-white"
                       />
                       <div className="flex gap-2">
                         <button
