@@ -195,6 +195,15 @@
 - [ ] Final deployment and video
 
 ## Recent Updates
+### Example Transcripts Creation
+- [x] **Created `example-transcripts/` folder** with comprehensive test cases
+  - [x] **Croup Cases**: mild (Emma L.), moderate (Jack T.), severe (Lucas M.)
+  - [x] **Other Respiratory Conditions**: asthma exacerbation, bronchiolitis, pneumonia, foreign body aspiration
+  - [x] **Clinical Variety**: Different ages (8 months to 4 years), severities, and conditions
+  - [x] **Realistic Data**: Proper vital signs, examination findings, and management plans
+  - [x] **Testing Coverage**: Patient extraction, condition assessment, management planning, medication dosing
+  - [x] **Documentation**: Comprehensive README explaining each case and testing scenarios
+
 ### Dose Calculator Implementation - Node.js-Based Medication Calculations
 - [x] **Precise Calculations**: Replaced LLM dose calculations with Node.js mathematical engine
   - [x] Weight-based dosing: dose per kg × patient weight
