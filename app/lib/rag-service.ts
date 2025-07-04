@@ -19,6 +19,15 @@ export interface RAGGuidelineChunk {
     source: string;
     version: string;
     date: string;
+    // Original metadata fields
+    header1?: string;
+    header3?: string;
+    header4?: string;
+    subchunk_id?: number;
+    chunk_id?: number;
+    reference?: string;
+    length?: number;
+    [key: string]: any; // Allow additional metadata fields
   };
   relevanceScore?: number;
   reasoning?: string;
@@ -193,10 +202,10 @@ export class RAGService {
         id: guideline.id,
         content: guideline.content,
         metadata: {
-          title: guideline.metadata?.header1 || guideline.metadata?.header3 || 'Unknown',
+          ...guideline.metadata, // Preserve all original metadata fields
+          title: guideline.metadata?.header4 || guideline.metadata?.header3 || guideline.metadata?.header1 || 'Unknown',
           section: guideline.metadata?.header4 || guideline.metadata?.header3 || 'Unknown',
           evidenceLevel: 'Unknown', // Not available in current metadata
-          source: guideline.metadata?.source || 'Unknown',
           version: 'Unknown', // Not available in current metadata
           date: 'Unknown' // Not available in current metadata
         }

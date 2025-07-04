@@ -363,7 +363,7 @@ export default function ViewTherapeuticGuidelines() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {guideline.metadata.header1 || guideline.metadata.header3 || 'Untitled'}
+                        {guideline.metadata.header4 || guideline.metadata.header3 || guideline.metadata.header1 || 'Untitled'}
                       </h3>
                       {guideline.metadata.header4 && (
                         <h4 className="text-sm font-medium text-gray-700 mb-2">

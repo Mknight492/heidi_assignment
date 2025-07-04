@@ -320,7 +320,9 @@
   - [x] **TARGETED LINKING**: Only show links for highly relevant chunks (relevance score >= 70)
   - [x] Added visual indicators for highly relevant guidelines (⭐ icon, green border)
   - [x] Display relevance scores for each guideline chunk
-  - [x] Prioritize links for chunks mentioned in final recommendations 
+  - [x] Prioritize links for chunks mentioned in final recommendations
+  - [x] **HEADER HIERARCHY**: Updated guideline content display to use lowest level header down to level 3 (header4 -> header3 -> header1)
+  - [x] **METADATA PRESERVATION**: Fixed RAG service to preserve original metadata fields while adding processed fields 
 
 Must haves:
 - [ ] Safety considerations (e.g. label site as PoC)

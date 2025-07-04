@@ -214,7 +214,7 @@ Plan:
                                       <span className="ml-1 text-xs">🔗</span>
                                     </a>
                                   ) : (
-                                    <span className="text-sm font-medium" title={guideline.metadata.source}>{cleanSource}</span>
+                                    <span className="text-sm font-medium text-gray-900" title={guideline.metadata.source}>{cleanSource}</span>
                                   )}
                                   {guidelineLink && (
                                     <div className="text-xs text-gray-500 mt-1">
@@ -238,6 +238,7 @@ Plan:
                          <h5 className="font-semibold text-blue-800 mb-2">Most Relevant Guideline Content:</h5>
                          <div className="space-y-2">
                            {result.relevantGuidelines.map((guideline: any, index: number) => {
+                             console.log(guideline);
                              const guidelineLink = guideline.metadata?.guidelineLink;
                              const isMostRelevant = guideline.metadata?.isMostRelevant;
                              const relevanceScore = guideline.metadata?.relevanceScore;
@@ -248,7 +249,7 @@ Plan:
                                    <div className="flex-1">
                                      <div className="flex items-center">
                                        <span className="font-medium text-gray-800">
-                                         {guideline.metadata.header1 || guideline.metadata.header3 || 'Untitled'}
+                                         {guideline.metadata.title || guideline.metadata.header4 || guideline.metadata.header3 || guideline.metadata.header1 || 'Untitled'}
                                        </span>
                                        <span className="ml-1 text-green-600 text-xs">⭐</span>
                                        {guidelineLink && (
