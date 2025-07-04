@@ -144,16 +144,16 @@ Plan:
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded p-3">
                   <h4 className="font-bold text-gray-900">Management Plan:</h4>
-                  <div className="prose prose-sm text-gray-700 max-w-none">
+                  <div className="prose prose-sm text-gray-700 max-w-none [&>h1]:text-2xl [&>h1]:font-black [&>h1]:text-gray-900 [&>h1]:mb-4 [&>h1]:mt-6 [&>h1:first-child]:mt-0 [&>h2]:text-xl [&>h2]:font-black [&>h2]:text-gray-800 [&>h2]:mb-3 [&>h2]:mt-5 [&>h3]:text-lg [&>h3]:font-bold [&>h3]:text-gray-800 [&>h3]:mb-2 [&>h3]:mt-4 [&>p]:mb-3 [&>ul]:mb-4 [&>ol]:mb-4 [&>li]:mb-1 [&>div]:mb-4">
                     <ReactMarkdown>{result.managementPlan}</ReactMarkdown>
                   </div>
                 </div>
-                {result.medicationRecommendations && result.medicationRecommendations.length > 0 && (
+                {/* {result.medicationRecommendations && result.medicationRecommendations.length > 0 && (
                   <div className="bg-gray-50 border border-gray-200 rounded p-3">
                     <h4 className="font-bold text-gray-900">Medication Recommendations:</h4>
                     <pre className="text-sm text-gray-900 bg-white p-2 rounded border overflow-auto">{JSON.stringify(result.medicationRecommendations, null, 2)}</pre>
                   </div>
-                )}
+                )} */}
                 <div className="bg-gray-50 border border-gray-200 rounded p-3">
                   <h4 className="font-bold text-gray-900">Confidence Score:</h4>
                   <p className="text-gray-700">{result.confidence}%</p>
