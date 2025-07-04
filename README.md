@@ -8,6 +8,7 @@ A Next.js application for uploading, storing, and searching Therapeutic Guidelin
 - **Semantic Search**: Search guidelines using Azure OpenAI text-embedding-3-large
 - **Vector Database**: Store embeddings in PostgreSQL with pgvector extension
 - **Clinical Decision Support**: Comprehensive management plan generation with structured processing flow
+- **Precise Dose Calculator**: Node.js-based medication dose calculations with pediatric safety checks
 - **Modern UI**: Beautiful, responsive interface for uploading and viewing guidelines
 - **Batch Processing**: Efficient processing of large guideline files
 - **Real-time Search**: Instant semantic search results
@@ -132,8 +133,46 @@ Start by testing the embedding service:
    - Assess condition and severity
    - Retrieve relevant guidelines via RAG
    - Generate comprehensive management plan
-   - Calculate precise drug doses
+   - Calculate precise drug doses using Node.js dose calculator
 4. **Review results** including confidence scores and evidence levels
+
+### 5. Test Dose Calculator
+
+1. Navigate to **Dose Calculator Test** (`/dose-calculator-test`)
+2. **Enter medication parameters**:
+   - Medication name
+   - Patient weight and age
+   - Dose per kg and units (from clinical guidelines)
+   - Frequency and route
+   - Maximum dose (optional)
+3. **Calculate dose** to see:
+   - Precise calculated dose
+   - Dose range (±20% of calculated dose)
+   - Pediatric safety warnings
+   - Confidence score
+   - Safety checks and recommendations
+
+## 💊 Dose Calculator
+
+### Precise Medication Calculations
+The system uses a Node.js-based dose calculator for accurate medication dosing instead of relying on LLM calculations:
+
+- **Weight-based dosing**: dose per kg × patient weight (guidelines should already account for severity)
+- **Unit conversions**: mg ↔ mcg ↔ g, ml ↔ l
+- **Maximum dose enforcement**: Automatic capping with warnings
+- **Pediatric safety checks**: Age and weight-based adjustments
+- **High-risk medication detection**: Special monitoring for specific drugs
+
+### Safety Features
+- **Age warnings**: <3 months (extreme caution), <12 months (careful monitoring)
+- **Weight adjustments**: <5kg (lower dose range), >50kg (adult dosing consideration)
+- **Route-specific checks**: IV administration monitoring
+- **Dose ranges**: ±20% of calculated dose with maximum limits
+
+### Integration
+- **LLM + Calculator**: LLM generates medication recommendations, calculator provides precise doses
+- **Validation**: Comprehensive input validation and error handling
+- **Confidence scoring**: Based on patient factors and safety warnings
 
 ## 🔍 Search Capabilities
 
@@ -196,6 +235,12 @@ Clinical Transcript
 ┌─────────────────┐
 │ 4. Generate     │ ← Comprehensive management plan
 │    Management   │
+└─────────────────┘
+        │
+        ▼
+┌─────────────────┐
+│ 5. Calculate    │ ← Precise drug doses with safety checks
+│    Drug Doses   │
 └─────────────────┘
         │
         ▼

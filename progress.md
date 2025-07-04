@@ -50,11 +50,26 @@
 - [ ] Implement semantic search for relevant guidelines
 - [ ] Context retrieval for decision support
 - [ ] Evidence level assessment and confidence scoring
-- [ ] Dose calculation function
-- [ ] Implement weight-based prednisone/dexamethasone calculator
-- [ ] Add safety checks and age-appropriate dosing
-- [ ] Include pediatric dosing guidelines
-- [ ] Evidence-based dosing recommendations
+- [x] **DOSE CALCULATOR IMPLEMENTATION**: Created Node.js-based dose calculator tool
+  - [x] Implemented `DoseCalculator` class with precise mathematical calculations
+  - [x] Added weight-based dosing (guidelines should already account for severity)
+  - [x] Implemented unit conversion (mg, mcg, g, ml, l)
+  - [x] Added pediatric safety checks (age, weight, high-risk medications)
+  - [x] Created dose range calculations (±20% with max dose limits)
+  - [x] Added confidence scoring based on patient factors and warnings
+  - [x] Implemented comprehensive validation and error handling
+- [x] **DOSE CALCULATOR API**: Created `/api/dose-calculator` endpoint
+  - [x] RESTful API for dose calculations with validation
+  - [x] Integration with management plan API
+  - [x] Error handling and detailed response formatting
+- [x] **LLM INTEGRATION**: Updated medication recommendations to use dose calculator tool
+  - [x] Modified prompts to instruct LLM to use dose calculator tool
+  - [x] Updated management plan API to process raw recommendations through dose calculator
+  - [x] Added helper function to convert LLM recommendations to precise calculations
+- [x] **TESTING INTERFACE**: Created dose calculator test page
+  - [x] Interactive form for testing different medication scenarios
+  - [x] Real-time dose calculation with detailed results
+  - [x] Safety warnings and confidence scoring display
 - [ ] Transcript processing
 - [ ] File parsing (PDF, DOCX, TXT)
 - [ ] Audio transcription (optional)
@@ -149,10 +164,10 @@
 - [ ] Documentation complete
 
 ## Notes & Issues
-- **Current Status**: Azure OpenAI embedding integration complete with semantic search. **PERFORMANCE OPTIMIZATION COMPLETE** - Document upload now uses bulk inserts, larger batches, and parallel processing for significantly improved performance. **PROCESSING FLOW RESTRUCTURED** - Management plan API now follows logical sequence for better clinical decision making.
-- **Next Priority**: Test the restructured processing flow and implement file upload support
+- **Current Status**: Azure OpenAI embedding integration complete with semantic search. **PERFORMANCE OPTIMIZATION COMPLETE** - Document upload now uses bulk inserts, larger batches, and parallel processing for significantly improved performance. **PROCESSING FLOW RESTRUCTURED** - Management plan API now follows logical sequence for better clinical decision making. **DOSE CALCULATOR COMPLETE** - Implemented Node.js-based dose calculator tool for precise medication calculations instead of relying on LLM.
+- **Next Priority**: Test the dose calculator integration and implement file upload support
 - **Blockers**: None currently
-- **Time Remaining**: ~8 hours estimated
+- **Time Remaining**: ~6 hours estimated
 
 ## Daily Progress Log
 ### Day 1 (Today)
@@ -180,6 +195,22 @@
 - [ ] Final deployment and video
 
 ## Recent Updates
+### Dose Calculator Implementation - Node.js-Based Medication Calculations
+- [x] **Precise Calculations**: Replaced LLM dose calculations with Node.js mathematical engine
+  - [x] Weight-based dosing: dose per kg × patient weight
+  - [x] Safety margins: mild (0.8×), moderate (1.0×), severe (1.2×)
+  - [x] Unit conversions: mg ↔ mcg ↔ g, ml ↔ l
+  - [x] Maximum dose enforcement with warnings
+- [x] **Pediatric Safety**: Comprehensive safety checks for pediatric patients
+  - [x] Age-based warnings (<3 months, <12 months)
+  - [x] Weight-based adjustments (<5kg, >50kg)
+  - [x] High-risk medication detection (digoxin, theophylline, lithium, warfarin)
+  - [x] Route-specific safety checks (IV administration)
+- [x] **Integration**: Seamless integration with existing management plan API
+  - [x] LLM generates raw medication recommendations
+  - [x] Dose calculator processes each recommendation for precise calculations
+  - [x] Results include dose ranges, warnings, safety checks, and confidence scores
+
 ### Processing Flow Restructuring - Management Plan API
 - [x] **Simplified Flow**: Streamlined API to follow clinical decision-making flow:
   1. Extract patient data from transcript

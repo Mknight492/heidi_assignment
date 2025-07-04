@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { AzureChatOpenAI } from '@langchain/azure-openai';
 import { Patient, ClinicalDecision, DoseCalculation } from '../../types/medical';
 import { RAGService } from '../../lib/rag-service';
+import { DoseCalculator, DoseCalculationRequest } from '../../lib/dose-calculator';
 import {
   PATIENT_EXTRACTION_PROMPT,
   PATIENT_EXTRACTION_SYSTEM_PROMPT,
@@ -12,6 +13,71 @@ import {
   MANAGEMENT_PLAN_PROMPT,
   MANAGEMENT_PLAN_SYSTEM_PROMPT
 } from '../../prompts';
+
+// Helper function to process medication recommendations with dose calculator
+async function processMedicationRecommendations(
+  rawRecommendations: any[],
+  patient: Patient,
+  condition: string,
+  severity: 'mild' | 'moderate' | 'severe'
+): Promise<DoseCalculation[]> {
+  const processedRecommendations: DoseCalculation[] = [];
+
+  for (const rawRec of rawRecommendations) {
+    try {
+      // Extract dosing parameters from the raw recommendation
+      const doseRequest: DoseCalculationRequest = {
+        medication: rawRec.medication,
+        weight: patient.weight,
+        weightUnit: 'kg',
+        dose: rawRec.dose || 0,
+        doseUnit: rawRec.unit || 'mg',
+        maxDose: rawRec.maxDose,
+        maxDoseUnit: rawRec.maxDoseUnit,
+        frequency: rawRec.frequency,
+        route: rawRec.route,
+        patientAge: patient.age * 12, // Convert years to months
+        patientWeight: patient.weight,
+        condition: condition
+      };
+
+      // Validate the request
+      const validationErrors = DoseCalculator.validateRequest(doseRequest);
+      if (validationErrors.length > 0) {
+        console.warn(`Skipping medication ${rawRec.medication}: ${validationErrors.join(', ')}`);
+        continue;
+      }
+
+      // Calculate the dose using the calculator
+      const calculatedResult = DoseCalculator.calculateDose(doseRequest);
+
+      // Create the final recommendation
+      const processedRec: DoseCalculation = {
+        medication: calculatedResult.medication,
+        dose: calculatedResult.calculatedDose,
+        unit: calculatedResult.unit,
+        frequency: calculatedResult.frequency,
+        route: calculatedResult.route,
+        rationale: calculatedResult.rationale,
+        evidenceLevel: calculatedResult.evidenceLevel,
+        confidence: calculatedResult.confidence,
+        safetyChecks: calculatedResult.safetyChecks,
+        patientWeight: calculatedResult.patientWeight,
+        patientAge: calculatedResult.patientAge,
+        calculatedDose: calculatedResult.calculatedDose,
+        doseRange: calculatedResult.doseRange,
+        warnings: calculatedResult.warnings
+      };
+
+      processedRecommendations.push(processedRec);
+    } catch (error) {
+      console.error(`Error processing medication ${rawRec.medication}:`, error);
+      // Continue with other medications
+    }
+  }
+
+  return processedRecommendations;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -134,8 +200,8 @@ export async function POST(request: NextRequest) {
       ['human', managementPrompt]
     ]);
 
-    // Step 5: Calculate drug doses based on management plan and guidelines
-    console.log('Step 5: Calculating drug doses...');
+    // Step 5: Generate medication recommendations and calculate precise doses
+    console.log('Step 5: Generating medication recommendations and calculating doses...');
     const medicationPrompt = MEDICATION_RECOMMENDATIONS_PROMPT
       .replace('{patientInfo}', JSON.stringify(patient))
       .replace('{condition}', conditionData.condition)
@@ -152,7 +218,7 @@ export async function POST(request: NextRequest) {
       ['human', medicationPrompt]
     ]);
 
-    let medicationRecommendations: DoseCalculation[] = [];
+    let rawMedicationRecommendations: any[] = [];
     try {
       let content = medicationResponse.content as string;
       
@@ -163,11 +229,19 @@ export async function POST(request: NextRequest) {
       }
       
       content = content.trim();
-      medicationRecommendations = JSON.parse(content);
+      rawMedicationRecommendations = JSON.parse(content);
     } catch (parseError) {
       console.error('Failed to parse medication data:', medicationResponse.content);
       // Continue without medication recommendations
     }
+
+    // Process medication recommendations with dose calculator
+    const medicationRecommendations = await processMedicationRecommendations(
+      rawMedicationRecommendations,
+      patient,
+      conditionData.condition,
+      conditionData.severity
+    );
 
     // Step 6: Calculate overall confidence
     const overallConfidence = Math.round(
