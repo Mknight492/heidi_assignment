@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Step 1: Extract patient data from transcript
+    console.log('Step 1: Extracting patient data from transcript...');
     const patientExtractionPrompt = PATIENT_EXTRACTION_PROMPT.replace('{transcript}', transcript);
 
     const patientResponse = await model.invoke([
@@ -53,19 +54,15 @@ export async function POST(request: NextRequest) {
 
     let patient: Patient;
     try {
-      // Handle potential markdown formatting in LLM response
       let content = patientResponse.content as string;
       
-      // Remove markdown code blocks if present
       if (content.includes('```json')) {
         content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
       } else if (content.includes('```')) {
         content = content.replace(/```\n?/g, '');
       }
       
-      // Trim whitespace
       content = content.trim();
-      
       patient = JSON.parse(content);
     } catch (parseError) {
       console.error('Failed to parse patient data:', patientResponse.content);
@@ -73,6 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 2: Determine condition and severity
+    console.log('Step 2: Assessing condition and severity...');
     const conditionPrompt = CONDITION_ASSESSMENT_PROMPT
       .replace('{patientInfo}', JSON.stringify(patient))
       .replace('{transcript}', transcript);
@@ -84,26 +82,23 @@ export async function POST(request: NextRequest) {
 
     let conditionData: { condition: string; severity: 'mild' | 'moderate' | 'severe'; confidence: number };
     try {
-      // Handle potential markdown formatting in LLM response
       let content = conditionResponse.content as string;
       
-      // Remove markdown code blocks if present
       if (content.includes('```json')) {
         content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
       } else if (content.includes('```')) {
         content = content.replace(/```\n?/g, '');
       }
       
-      // Trim whitespace
       content = content.trim();
-      
       conditionData = JSON.parse(content);
     } catch (parseError) {
       console.error('Failed to parse condition data:', conditionResponse.content);
       throw new Error('Failed to determine condition and severity');
     }
 
-    // Step 3: Process RAG to retrieve relevant guidelines
+    // Step 3: Process RAG to retrieve relevant guidelines for management and treatment
+    console.log('Step 3: Retrieving relevant guidelines via RAG...');
     let ragResult = null;
     let relevantGuidelines: any[] = [];
     try {
@@ -113,7 +108,7 @@ export async function POST(request: NextRequest) {
         conditionData.condition,
         conditionData.severity,
         patient.presentingComplaint,
-        8 // Limit to 8 chunks for management plan
+        10 // Increased limit for comprehensive guidelines
       );
       relevantGuidelines = ragResult.retrievedChunks;
     } catch (ragError) {
@@ -121,11 +116,36 @@ export async function POST(request: NextRequest) {
       // Continue without RAG results
     }
 
-    // Step 4: Generate medication recommendations
+    // Step 4: Generate comprehensive management plan based on guidelines
+    console.log('Step 4: Generating management plan...');
+    const managementPrompt = MANAGEMENT_PLAN_PROMPT
+      .replace('{patientInfo}', JSON.stringify(patient))
+      .replace('{condition}', conditionData.condition)
+      .replace('{severity}', conditionData.severity)
+      .replace('{medications}', '[]') // No medications yet, will be calculated in next step
+      .replace('{guidelines}', relevantGuidelines.length > 0 ? JSON.stringify(relevantGuidelines) : 'No specific guidelines available')
+      .replace('{guidelineSummary}', ragResult ? JSON.stringify({
+        synthesis: ragResult.synthesis,
+        finalRecommendation: ragResult.finalRecommendation
+      }) : 'No guideline summary available');
+
+    const managementResponse = await model.invoke([
+      ['system', MANAGEMENT_PLAN_SYSTEM_PROMPT],
+      ['human', managementPrompt]
+    ]);
+
+    // Step 5: Calculate drug doses based on management plan and guidelines
+    console.log('Step 5: Calculating drug doses...');
     const medicationPrompt = MEDICATION_RECOMMENDATIONS_PROMPT
       .replace('{patientInfo}', JSON.stringify(patient))
       .replace('{condition}', conditionData.condition)
-      .replace('{severity}', conditionData.severity);
+      .replace('{severity}', conditionData.severity)
+      .replace('{guidelines}', relevantGuidelines.length > 0 ? JSON.stringify(relevantGuidelines) : 'No specific guidelines available')
+      .replace('{guidelineSummary}', ragResult ? JSON.stringify({
+        synthesis: ragResult.synthesis,
+        finalRecommendation: ragResult.finalRecommendation
+      }) : 'No guideline summary available')
+      .replace('{managementPlan}', managementResponse.content as string);
 
     const medicationResponse = await model.invoke([
       ['system', MEDICATION_RECOMMENDATIONS_SYSTEM_PROMPT],
@@ -134,36 +154,20 @@ export async function POST(request: NextRequest) {
 
     let medicationRecommendations: DoseCalculation[] = [];
     try {
-      // Handle potential markdown formatting in LLM response
       let content = medicationResponse.content as string;
       
-      // Remove markdown code blocks if present
       if (content.includes('```json')) {
         content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
       } else if (content.includes('```')) {
         content = content.replace(/```\n?/g, '');
       }
       
-      // Trim whitespace
       content = content.trim();
-      
       medicationRecommendations = JSON.parse(content);
     } catch (parseError) {
       console.error('Failed to parse medication data:', medicationResponse.content);
       // Continue without medication recommendations
     }
-
-    // Step 5: Generate comprehensive management plan
-    const managementPrompt = MANAGEMENT_PLAN_PROMPT
-      .replace('{patientInfo}', JSON.stringify(patient))
-      .replace('{condition}', conditionData.condition)
-      .replace('{severity}', conditionData.severity)
-      .replace('{medications}', JSON.stringify(medicationRecommendations));
-
-    const managementResponse = await model.invoke([
-      ['system', MANAGEMENT_PLAN_SYSTEM_PROMPT],
-      ['human', managementPrompt]
-    ]);
 
     // Step 6: Calculate overall confidence
     const overallConfidence = Math.round(

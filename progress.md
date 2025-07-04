@@ -68,6 +68,12 @@
 - [x] Calculate weight-based medication doses with evidence levels
 - [x] Generate comprehensive decision support plan
 - [x] Return all results in single response with confidence scores
+- [x] **RESTRUCTURED PROCESSING FLOW**: Updated management plan API to follow logical sequence:
+  - [x] Step 1: Extract patient data from transcript
+  - [x] Step 2: Assess condition and severity
+  - [x] Step 3: RAG for guidelines (management and treatment)
+  - [x] Step 4: Generate management plan based on guidelines
+  - [x] Step 5: Calculate drug doses based on management plan
 - [ ] Add file upload support
 - [ ] Handle PDF, DOCX, TXT file uploads
 - [ ] Extract text from uploaded documents
@@ -143,8 +149,8 @@
 - [ ] Documentation complete
 
 ## Notes & Issues
-- **Current Status**: Azure OpenAI embedding integration complete with semantic search. **PERFORMANCE OPTIMIZATION COMPLETE** - Document upload now uses bulk inserts, larger batches, and parallel processing for significantly improved performance.
-- **Next Priority**: Implement RAG implementation and query vector database for relevant local guidelines
+- **Current Status**: Azure OpenAI embedding integration complete with semantic search. **PERFORMANCE OPTIMIZATION COMPLETE** - Document upload now uses bulk inserts, larger batches, and parallel processing for significantly improved performance. **PROCESSING FLOW RESTRUCTURED** - Management plan API now follows logical sequence for better clinical decision making.
+- **Next Priority**: Test the restructured processing flow and implement file upload support
 - **Blockers**: None currently
 - **Time Remaining**: ~8 hours estimated
 
@@ -174,6 +180,16 @@
 - [ ] Final deployment and video
 
 ## Recent Updates
+### Processing Flow Restructuring - Management Plan API
+- [x] **Simplified Flow**: Streamlined API to follow clinical decision-making flow:
+  1. Extract patient data from transcript
+  2. Assess condition and severity
+  3. RAG for guidelines (management and treatment)
+  4. Generate management plan based on guidelines
+  5. Calculate drug doses based on management plan
+- [x] **Enhanced Prompts**: Updated management plan and medication prompts to include guidelines, management plan context, and guideline summaries
+- [x] **Improved Context**: Drug dose calculations now consider the management plan, relevant guidelines, and synthesized guideline summaries for better clinical alignment
+
 ### Performance Optimization - Document Upload System
 - [x] **Bulk Database Operations**: Implemented `bulkStoreTherapeuticGuidelineChunks()` function using transactions for atomic batch inserts
 - [x] **Increased Batch Size**: Changed from 10 to 50 items per batch for better throughput
@@ -256,11 +272,14 @@ Must haves:
 
 Additional features/considerations
 - [ ] html link to guidelines
+- [ ] using meta-data i.e. title in the vector search
 - [ ] different regions
 - [ ] agentic search
 - [ ] reranking
+- [ ] medication specific guidelines
 - [ ] web search
 - [ ] multi-modal search
 - [ ] knowledge graph
+- [ ] model router
 - [ ] comparison tool for making changes
 - [ ] test suite

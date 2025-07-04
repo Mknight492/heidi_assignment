@@ -7,6 +7,7 @@ A Next.js application for uploading, storing, and searching Therapeutic Guidelin
 - **Therapeutic Guidelines Upload**: Upload JSON files containing medical guideline chunks
 - **Semantic Search**: Search guidelines using Azure OpenAI text-embedding-3-large
 - **Vector Database**: Store embeddings in PostgreSQL with pgvector extension
+- **Clinical Decision Support**: Comprehensive management plan generation with structured processing flow
 - **Modern UI**: Beautiful, responsive interface for uploading and viewing guidelines
 - **Batch Processing**: Efficient processing of large guideline files
 - **Real-time Search**: Instant semantic search results
@@ -122,6 +123,18 @@ Start by testing the embedding service:
 3. **Search by content** using semantic similarity
 4. **View detailed results** with metadata
 
+### 4. Clinical Decision Support
+
+1. Navigate to the **Home page** (`/`)
+2. **Enter clinical transcript** or patient notes
+3. **Submit for analysis** - the system will:
+   - Extract patient data
+   - Assess condition and severity
+   - Retrieve relevant guidelines via RAG
+   - Generate comprehensive management plan
+   - Calculate precise drug doses
+4. **Review results** including confidence scores and evidence levels
+
 ## 🔍 Search Capabilities
 
 ### Semantic Search
@@ -152,7 +165,44 @@ Each result shows:
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │   Upload UI     │    │   Azure OpenAI   │    │   Vector Store  │
 │   Search UI     │    │   Embeddings     │    │   (1536 dims)   │
+│   Clinical UI   │    │   LLM Models     │    │   Guidelines    │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
+```
+
+### Clinical Decision Support Flow
+
+```
+Clinical Transcript
+        │
+        ▼
+┌─────────────────┐
+│ 1. Extract      │ ← Patient demographics & history
+│    Patient Data │
+└─────────────────┘
+        │
+        ▼
+┌─────────────────┐
+│ 2. Assess       │ ← Condition & severity
+│    Condition    │
+└─────────────────┘
+        │
+        ▼
+┌─────────────────┐
+│ 3. RAG for      │ ← Retrieve relevant guidelines
+│    Guidelines   │
+└─────────────────┘
+        │
+        ▼
+┌─────────────────┐
+│ 4. Generate     │ ← Comprehensive management plan
+│    Management   │
+└─────────────────┘
+        │
+        ▼
+┌─────────────────┐
+│ 5. Calculate    │ ← Precise drug dosing
+│    Drug Doses   │
+└─────────────────┘
 ```
 
 ## 📊 Database Schema
