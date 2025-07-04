@@ -15,6 +15,9 @@ This folder contains example medical transcripts for testing the pediatric respi
 - **pneumonia.md** - Isabella K., 3 years 6 months, bacterial pneumonia with systemic illness
 - **foreign-body-aspiration.md** - Ethan P., 2 years 8 months, suspected peanut aspiration
 
+### Non-Respiratory Conditions
+- **balanoposthitis.md** - Liam C., 3 years 8 months, balanoposthitis secondary to poor hygiene during toilet training
+
 ## Clinical Features Covered
 
 These transcripts include various clinical presentations with:

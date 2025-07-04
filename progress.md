@@ -304,7 +304,14 @@
   - [x] Evidence-based recommendations from RAG
   - [x] Safety considerations and monitoring requirements
 - [x] Improved evidence summary to mention guideline support
-- [x] Added fallback handling when RAG processing fails 
+- [x] Added fallback handling when RAG processing fails
+- [x] **GUIDELINE LINKS**: Implemented linking to appropriate web pages for guideline sources
+  - [x] Created `guideline-links.ts` utility with PDF-to-links mapping functionality
+  - [x] Added support for exact filename matching and partial matching
+  - [x] Updated management plan API to include guideline links in response
+  - [x] Enhanced frontend to display clickable links for guideline sources
+  - [x] Added topic and subtopic information display for linked guidelines
+  - [x] Implemented fallback for guidelines without available links 
 
 Must haves:
 - [ ] Safety considerations (e.g. label site as PoC)

@@ -191,39 +191,87 @@ Plan:
                       <div className="mb-4">
                         <h5 className="font-semibold text-blue-800 mb-2">Guideline Sources:</h5>
                         <div className="space-y-2">
-                          {Array.from(new Set(result.relevantGuidelines.map((g: any) => g.metadata.source))).map((source: any, index: number) => (
-                            <div key={index} className="bg-white rounded p-2 flex items-center">
-                              <span className="text-blue-600 mr-2">📄</span>
-                              <span className="text-sm font-medium">{source}</span>
-                              <span className="ml-auto text-xs text-gray-500">
-                                {result.relevantGuidelines.filter((g: any) => g.metadata.source === source).length} chunks
-                              </span>
-                            </div>
-                          ))}
+                          {Array.from(new Set(result.relevantGuidelines.map((g: any) => g.metadata.source))).map((source: any, index: number) => {
+                            // Find the first guideline with this source to get the link
+                            const firstGuideline = result.relevantGuidelines.find((g: any) => g.metadata.source === source);
+                            const guidelineLink = firstGuideline?.metadata?.guidelineLink;
+                            
+                            return (
+                              <div key={index} className="bg-white rounded p-2 flex items-center">
+                                <span className="text-blue-600 mr-2">📄</span>
+                                <div className="flex-1">
+                                  {guidelineLink ? (
+                                    <a 
+                                      href={guidelineLink.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                                      title={`${guidelineLink.topic} - ${guidelineLink.subtopic}`}
+                                    >
+                                      {source}
+                                      <span className="ml-1 text-xs">🔗</span>
+                                    </a>
+                                  ) : (
+                                    <span className="text-sm font-medium">{source}</span>
+                                  )}
+                                  {guidelineLink && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      {guidelineLink.topic} - {guidelineLink.subtopic}
+                                    </div>
+                                  )}
+                                </div>
+                                <span className="ml-auto text-xs text-gray-500">
+                                  {result.relevantGuidelines.filter((g: any) => g.metadata.source === source).length} chunks
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                                         )}
+                    )}
 
                      {/* Retrieved Guideline Chunks */}
                      {result.relevantGuidelines && result.relevantGuidelines.length > 0 && (
                        <div className="mb-4">
                          <h5 className="font-semibold text-blue-800 mb-2">Retrieved Guideline Chunks:</h5>
                          <div className="space-y-2 max-h-40 overflow-y-auto">
-                           {result.relevantGuidelines.slice(0, 5).map((guideline: any, index: number) => (
-                             <div key={index} className="bg-white rounded p-2 text-xs border border-gray-200">
-                               <div className="flex items-start justify-between mb-1">
-                                 <span className="font-medium text-gray-800">
-                                   {guideline.metadata.header1 || guideline.metadata.header3 || 'Untitled'}
-                                 </span>
-                                 <span className="text-gray-500 text-xs">
-                                   {guideline.metadata.source}
-                                 </span>
+                           {result.relevantGuidelines.slice(0, 5).map((guideline: any, index: number) => {
+                             const guidelineLink = guideline.metadata?.guidelineLink;
+                             
+                             return (
+                               <div key={index} className="bg-white rounded p-2 text-xs border border-gray-200">
+                                 <div className="flex items-start justify-between mb-1">
+                                   <div className="flex-1">
+                                     <span className="font-medium text-gray-800">
+                                       {guideline.metadata.header1 || guideline.metadata.header3 || 'Untitled'}
+                                     </span>
+                                     {guidelineLink && (
+                                       <a 
+                                         href={guidelineLink.url} 
+                                         target="_blank" 
+                                         rel="noopener noreferrer"
+                                         className="ml-1 text-blue-600 hover:text-blue-800 hover:underline"
+                                         title={`${guidelineLink.topic} - ${guidelineLink.subtopic}`}
+                                       >
+                                         🔗
+                                       </a>
+                                     )}
+                                   </div>
+                                   <span className="text-gray-500 text-xs">
+                                     {guideline.metadata.source}
+                                   </span>
+                                 </div>
+                                 <p className="text-gray-600 line-clamp-2">
+                                   {guideline.content.substring(0, 150)}...
+                                 </p>
+                                 {guidelineLink && (
+                                   <div className="text-xs text-gray-500 mt-1">
+                                     {guidelineLink.topic} - {guidelineLink.subtopic}
+                                   </div>
+                                 )}
                                </div>
-                               <p className="text-gray-600 line-clamp-2">
-                                 {guideline.content.substring(0, 150)}...
-                               </p>
-                             </div>
-                           ))}
+                             );
+                           })}
                            {result.relevantGuidelines.length > 5 && (
                              <div className="text-center text-xs text-gray-500">
                                ... and {result.relevantGuidelines.length - 5} more chunks

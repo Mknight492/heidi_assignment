@@ -175,4 +175,12 @@ Build a clinical decision support system that ingests clinical text, queries gui
 - ✅ Returns detailed management plan
 - ✅ Works with multiple test cases
 - ✅ Deployed and accessible
-- ✅ Documentation complete 
+- ✅ Documentation complete
+- ✅ Guideline source linking to web pages
+
+## Additional Features Implemented
+- ✅ **Guideline Source Linking**: Links guideline sources to appropriate web pages using PDF-to-links mapping
+  - Direct filename matching with fallback to partial matching
+  - Topic and subtopic information display
+  - Clickable links in management plan interface
+  - Graceful fallback for guidelines without available links 

@@ -3,6 +3,7 @@ import { AzureChatOpenAI } from '@langchain/azure-openai';
 import { Patient, ClinicalDecision, DoseCalculation } from '../../types/medical';
 import { RAGService } from '../../lib/rag-service';
 import { DoseCalculator, DoseCalculationRequest } from '../../lib/dose-calculator';
+import { getGuidelineLink } from '../../lib/guideline-links';
 import {
   PATIENT_EXTRACTION_PROMPT,
   PATIENT_EXTRACTION_SYSTEM_PROMPT,
@@ -251,12 +252,24 @@ export async function POST(request: NextRequest) {
          0)) / 2
     );
 
+    // Add guideline links to relevant guidelines
+    const guidelinesWithLinks = relevantGuidelines.map(guideline => {
+      const link = getGuidelineLink(guideline.metadata.source);
+      return {
+        ...guideline,
+        metadata: {
+          ...guideline.metadata,
+          guidelineLink: link
+        }
+      };
+    });
+
     // Construct the final result
     const result: ClinicalDecision = {
       patient,
       condition: conditionData.condition,
       severity: conditionData.severity,
-      relevantGuidelines: relevantGuidelines,
+      relevantGuidelines: guidelinesWithLinks,
       medicationRecommendations,
       managementPlan: managementResponse.content as string,
       confidence: overallConfidence,
