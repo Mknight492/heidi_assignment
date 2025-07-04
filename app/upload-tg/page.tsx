@@ -16,14 +16,26 @@ interface UploadSummary {
   failed: number;
 }
 
+interface UploadPerformance {
+  batchSize: number;
+  totalBatches: number;
+}
+
 export default function UploadTherapeuticGuidelines() {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [results, setResults] = useState<UploadResult[]>([]);
   const [summary, setSummary] = useState<UploadSummary | null>(null);
+  const [performance, setPerformance] = useState<UploadPerformance | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [clearExisting, setClearExisting] = useState(false);
   const [previewData, setPreviewData] = useState<TherapeuticGuidelineChunk[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<{
+    currentBatch: number;
+    totalBatches: number;
+    processedItems: number;
+    totalItems: number;
+  } | null>(null);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -54,6 +66,7 @@ export default function UploadTherapeuticGuidelines() {
 
     setIsUploading(true);
     setError(null);
+    setUploadProgress(null);
 
     try {
       const formData = new FormData();
@@ -73,10 +86,12 @@ export default function UploadTherapeuticGuidelines() {
 
       setResults(data.results || []);
       setSummary(data.summary);
+      setPerformance(data.performance);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -192,6 +207,36 @@ export default function UploadTherapeuticGuidelines() {
             </div>
           )}
 
+          {/* Upload Progress */}
+          {isUploading && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-blue-800">Processing Upload</h3>
+                <span className="text-sm text-blue-600">
+                  {uploadProgress ? `${uploadProgress.processedItems}/${uploadProgress.totalItems} items` : 'Initializing...'}
+                </span>
+              </div>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: uploadProgress 
+                      ? `${(uploadProgress.processedItems / uploadProgress.totalItems) * 100}%` 
+                      : '0%' 
+                  }}
+                ></div>
+              </div>
+              <div className="mt-2 text-xs text-blue-600">
+                {uploadProgress && (
+                  <>
+                    Batch {uploadProgress.currentBatch} of {uploadProgress.totalBatches} • 
+                    {Math.round((uploadProgress.processedItems / uploadProgress.totalItems) * 100)}% complete
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="flex space-x-4 mb-8">
             <button
@@ -224,7 +269,7 @@ export default function UploadTherapeuticGuidelines() {
           {summary && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Upload Summary</h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-4 mb-4">
                 <div className="bg-blue-50 rounded-lg p-4 text-center">
                   <div className="text-2xl font-bold text-blue-600">{summary.total}</div>
                   <div className="text-sm text-blue-800">Total Items</div>
@@ -238,6 +283,23 @@ export default function UploadTherapeuticGuidelines() {
                   <div className="text-sm text-red-800">Failed</div>
                 </div>
               </div>
+              
+              {/* Performance Information */}
+              {performance && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">Performance Details</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Batch Size:</span>
+                      <span className="ml-2 font-medium">{performance.batchSize} items</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Total Batches:</span>
+                      <span className="ml-2 font-medium">{performance.totalBatches}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

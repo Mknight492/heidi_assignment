@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeDatabase, storeTherapeuticGuidelineChunk, clearTherapeuticGuidelines } from '../../lib/database';
+import { initializeDatabase, bulkStoreTherapeuticGuidelineChunks, clearTherapeuticGuidelines } from '../../lib/database';
 import { TherapeuticGuidelineChunk } from '../../types/medical';
-import { generateEmbedding, generateEmbeddings, testEmbeddingService } from '../../lib/embeddings';
+import { generateEmbeddings, testEmbeddingService } from '../../lib/embeddings';
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,59 +62,68 @@ export async function POST(request: NextRequest) {
       await clearTherapeuticGuidelines();
     }
     
-    // Process each guideline chunk
+    // Optimized processing with larger batches and parallel processing
+    const batchSize = 50; // Increased from 10 to 50
     const results = [];
     let successCount = 0;
     let errorCount = 0;
     
-    // Process in batches to avoid overwhelming the API
-    const batchSize = 10;
+    console.log(`Processing ${guidelines.length} guidelines in batches of ${batchSize}`);
+    
+    // Process in larger batches for better performance
     for (let i = 0; i < guidelines.length; i += batchSize) {
       const batch = guidelines.slice(i, i + batchSize);
+      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(guidelines.length / batchSize)}`);
       
       try {
-        // Generate embeddings for the batch
+        // Generate embeddings for the entire batch at once
         const texts = batch.map(chunk => chunk.text);
         const embeddings = await generateEmbeddings(texts);
         
-        // Store each chunk with its embedding
-        for (let j = 0; j < batch.length; j++) {
-          const chunk = batch[j];
-          const embedding = embeddings[j];
+        // Prepare chunks with embeddings for bulk insert
+        const chunksWithEmbeddings = batch.map((chunk, index) => ({
+          chunk,
+          embedding: embeddings[index]
+        }));
+        
+        // Validate chunks before bulk insert
+        const validChunks = [];
+        const invalidResults = [];
+        
+        for (let j = 0; j < chunksWithEmbeddings.length; j++) {
+          const { chunk, embedding } = chunksWithEmbeddings[j];
           
-          try {
-            // Validate chunk structure
-            if (!chunk.text || !chunk.metadata) {
-              console.warn('Skipping invalid chunk:', chunk);
-              results.push({
-                success: false,
-                error: 'Invalid chunk structure',
-                metadata: chunk.metadata
-              });
-              errorCount++;
-              continue;
-            }
-            
-            // Store in database
-            const id = await storeTherapeuticGuidelineChunk(chunk, embedding);
-            
-            results.push({
-              id,
-              success: true,
-              metadata: chunk.metadata
-            });
-            
-            successCount++;
-          } catch (error) {
-            console.error('Error processing chunk:', error);
-            results.push({
+          if (!chunk.text || !chunk.metadata) {
+            console.warn('Skipping invalid chunk:', chunk);
+            invalidResults.push({
               success: false,
-              error: error instanceof Error ? error.message : 'Unknown error',
+              error: 'Invalid chunk structure',
               metadata: chunk.metadata
             });
             errorCount++;
+          } else {
+            validChunks.push({ chunk, embedding });
           }
         }
+        
+        // Bulk insert valid chunks
+        if (validChunks.length > 0) {
+          const ids = await bulkStoreTherapeuticGuidelineChunks(validChunks);
+          
+          // Add successful results
+          for (let j = 0; j < validChunks.length; j++) {
+            results.push({
+              id: ids[j],
+              success: true,
+              metadata: validChunks[j].chunk.metadata
+            });
+            successCount++;
+          }
+        }
+        
+        // Add invalid results
+        results.push(...invalidResults);
+        
       } catch (error) {
         console.error('Error processing batch:', error);
         // Mark all chunks in this batch as failed
@@ -139,6 +148,10 @@ export async function POST(request: NextRequest) {
       embeddingInfo: {
         dimensions: embeddingTest.dimensions,
         model: 'text-embedding-3-large'
+      },
+      performance: {
+        batchSize,
+        totalBatches: Math.ceil(guidelines.length / batchSize)
       },
       results
     });

@@ -9,6 +9,7 @@ Ensure the plan and progress is updated with any changes
 
 The app is a next.js project with a React frontend and node.js backend
 
+When using promppts these should be the ./app/prompts folder
 
 [assignment.md](mdc:assignment.md)
 @plan.md

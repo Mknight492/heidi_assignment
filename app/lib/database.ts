@@ -350,4 +350,41 @@ export async function clearTherapeuticGuidelines() {
   }
 }
 
+// Bulk store therapeutic guideline chunks with embeddings (optimized for performance)
+export async function bulkStoreTherapeuticGuidelineChunks(chunks: Array<{chunk: TherapeuticGuidelineChunk, embedding: number[]}>) {
+  const client = await pool.connect();
+  try {
+    // Use a transaction for better performance and atomicity
+    await client.query('BEGIN');
+    
+    // Prepare bulk insert query
+    const query = `
+      INSERT INTO therapeutic_guidelines (content, embedding, metadata)
+      VALUES ${chunks.map((_, index) => `($${index * 3 + 1}, $${index * 3 + 2}::vector, $${index * 3 + 3})`).join(', ')}
+      RETURNING id;
+    `;
+    
+    // Flatten values array
+    const values: any[] = [];
+    chunks.forEach(({chunk, embedding}) => {
+      values.push(
+        chunk.text,
+        `[${embedding.join(',')}]`,
+        JSON.stringify(chunk.metadata)
+      );
+    });
+    
+    const result = await client.query(query, values);
+    await client.query('COMMIT');
+    
+    return result.rows.map(row => row.id);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error bulk storing therapeutic guideline chunks:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export default pool; 

@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AzureChatOpenAI } from '@langchain/azure-openai';
 import { Patient, ClinicalDecision, DoseCalculation } from '../../types/medical';
+import {
+  PATIENT_EXTRACTION_PROMPT,
+  PATIENT_EXTRACTION_SYSTEM_PROMPT,
+  CONDITION_ASSESSMENT_PROMPT,
+  CONDITION_ASSESSMENT_SYSTEM_PROMPT,
+  MEDICATION_RECOMMENDATIONS_PROMPT,
+  MEDICATION_RECOMMENDATIONS_SYSTEM_PROMPT,
+  MANAGEMENT_PLAN_PROMPT,
+  MANAGEMENT_PLAN_SYSTEM_PROMPT
+} from '../../prompts';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,27 +43,10 @@ export async function POST(request: NextRequest) {
     });
 
     // Step 1: Extract patient data from transcript
-    const patientExtractionPrompt = `
-You are a medical AI assistant. Extract patient information from the following clinical transcript and return it as a JSON object.
-
-Required fields:
-- name: string (if mentioned, otherwise "Unknown")
-- age: number (in years)
-- weight: number (in kg)
-- height: number (in cm, if mentioned)
-- sex: "M" or "F" (if mentioned)
-- presentingComplaint: string (main complaint)
-- history: string (relevant history)
-- examination: string (examination findings)
-- assessment: string (clinical assessment)
-
-Transcript: ${transcript}
-
-Return ONLY the JSON object, no additional text.
-`;
+    const patientExtractionPrompt = PATIENT_EXTRACTION_PROMPT.replace('{transcript}', transcript);
 
     const patientResponse = await model.invoke([
-      ['system', 'You are a medical AI assistant that extracts structured patient data from clinical transcripts. Return only valid JSON without any markdown formatting or code blocks.'],
+      ['system', PATIENT_EXTRACTION_SYSTEM_PROMPT],
       ['human', patientExtractionPrompt]
     ]);
 
@@ -79,22 +72,12 @@ Return ONLY the JSON object, no additional text.
     }
 
     // Step 2: Determine condition and severity
-    const conditionPrompt = `
-Based on the patient information and transcript, determine the primary condition and severity.
-
-Patient Info: ${JSON.stringify(patient)}
-Transcript: ${transcript}
-
-Return a JSON object with:
-- condition: string (primary diagnosis)
-- severity: "mild", "moderate", or "severe"
-- confidence: number (0-100)
-
-Return ONLY the JSON object, no additional text.
-`;
+    const conditionPrompt = CONDITION_ASSESSMENT_PROMPT
+      .replace('{patientInfo}', JSON.stringify(patient))
+      .replace('{transcript}', transcript);
 
     const conditionResponse = await model.invoke([
-      ['system', 'You are a medical AI assistant that determines conditions and severity from clinical data. Return only valid JSON without any markdown formatting or code blocks.'],
+      ['system', CONDITION_ASSESSMENT_SYSTEM_PROMPT],
       ['human', conditionPrompt]
     ]);
 
@@ -120,37 +103,13 @@ Return ONLY the JSON object, no additional text.
     }
 
     // Step 3: Generate medication recommendations
-    const medicationPrompt = `
-Based on the patient information and condition, generate medication recommendations with dosing calculations.
-
-Patient: ${JSON.stringify(patient)}
-Condition: ${conditionData.condition}
-Severity: ${conditionData.severity}
-
-For pediatric patients, consider:
-- Weight-based dosing
-- Age-appropriate medications
-- Safety considerations
-
-Return a JSON array of medication recommendations with:
-- medication: string
-- dose: number
-- unit: string
-- frequency: string
-- route: string
-- rationale: string
-- evidenceLevel: "A", "B", "C", or "D"
-- confidence: number (0-100)
-- safetyChecks: string[]
-- calculatedDose: number (weight-based calculation)
-- doseRange: { min: number, max: number }
-- warnings: string[]
-
-Return ONLY the JSON array, no additional text.
-`;
+    const medicationPrompt = MEDICATION_RECOMMENDATIONS_PROMPT
+      .replace('{patientInfo}', JSON.stringify(patient))
+      .replace('{condition}', conditionData.condition)
+      .replace('{severity}', conditionData.severity);
 
     const medicationResponse = await model.invoke([
-      ['system', 'You are a medical AI assistant that generates evidence-based medication recommendations. Return only valid JSON without any markdown formatting or code blocks.'],
+      ['system', MEDICATION_RECOMMENDATIONS_SYSTEM_PROMPT],
       ['human', medicationPrompt]
     ]);
 
@@ -176,26 +135,14 @@ Return ONLY the JSON array, no additional text.
     }
 
     // Step 4: Generate comprehensive management plan
-    const managementPrompt = `
-Generate a comprehensive management plan for this patient.
-
-Patient: ${JSON.stringify(patient)}
-Condition: ${conditionData.condition}
-Severity: ${conditionData.severity}
-Medications: ${JSON.stringify(medicationRecommendations)}
-
-Create a detailed management plan that includes:
-1. Immediate management steps
-2. Monitoring requirements
-3. Follow-up recommendations
-4. Patient education points
-5. When to seek further medical attention
-
-Return a comprehensive, well-structured management plan as plain text.
-`;
+    const managementPrompt = MANAGEMENT_PLAN_PROMPT
+      .replace('{patientInfo}', JSON.stringify(patient))
+      .replace('{condition}', conditionData.condition)
+      .replace('{severity}', conditionData.severity)
+      .replace('{medications}', JSON.stringify(medicationRecommendations));
 
     const managementResponse = await model.invoke([
-      ['system', 'You are a medical AI assistant that creates comprehensive management plans. Provide clear, actionable recommendations.'],
+      ['system', MANAGEMENT_PLAN_SYSTEM_PROMPT],
       ['human', managementPrompt]
     ]);
 

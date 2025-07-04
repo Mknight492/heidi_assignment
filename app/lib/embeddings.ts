@@ -48,12 +48,25 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   }
 }
 
-// Generate embeddings for multiple texts (batch processing)
+// Generate embeddings for multiple texts (batch processing) - optimized for large batches
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   try {
     const model = getEmbeddingsModel();
-    const embeddings = await model.embedDocuments(texts);
-    return embeddings.map(truncateEmbedding);
+    
+    // For very large batches, we might need to split them further
+    const maxBatchSize = 100; // Azure OpenAI has limits on batch size
+    const results: number[][] = [];
+    
+    for (let i = 0; i < texts.length; i += maxBatchSize) {
+      const batch = texts.slice(i, i + maxBatchSize);
+      console.log(`Generating embeddings for batch ${Math.floor(i / maxBatchSize) + 1}/${Math.ceil(texts.length / maxBatchSize)} (${batch.length} texts)`);
+      
+      const batchEmbeddings = await model.embedDocuments(batch);
+      const truncatedEmbeddings = batchEmbeddings.map(truncateEmbedding);
+      results.push(...truncatedEmbeddings);
+    }
+    
+    return results;
   } catch (error) {
     console.error('Error generating embeddings:', error);
     throw new Error(`Failed to generate embeddings: ${error instanceof Error ? error.message : 'Unknown error'}`);
