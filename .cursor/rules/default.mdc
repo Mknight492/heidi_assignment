@@ -12,6 +12,8 @@ The app is a next.js project with a React frontend and node.js backend
 
 When using promppts these should be the ./app/prompts folder
 
+examples of the data uploaded to RAG can be found in /example-resources/
+
 [assignment.md](mdc:assignment.md)
 @plan.md
 @progress.md

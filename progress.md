@@ -233,13 +233,29 @@
 - [x] Added navigation link to main page
 - [x] Integrated with existing therapeutic guidelines database
 - [x] Implemented error handling and fallback mechanisms
-- [x] Added performance metrics and processing time tracking 
+- [x] Added performance metrics and processing time tracking
+
+### Management Plan Integration with RAG
+- [x] Updated `/api/management-plan` endpoint to integrate with RAG service
+- [x] Added RAG processing step to management plan pipeline
+- [x] Enhanced management plan response to include RAG information
+- [x] Updated main page to display guidelines used in management plan
+- [x] Added comprehensive guidelines display section with:
+  - [x] RAG metrics (retrieved chunks, relevant chunks, processing time, average relevance score)
+  - [x] Guideline sources summary with chunk counts
+  - [x] Retrieved guideline chunks preview (first 5 with content snippets)
+  - [x] RAG synthesis information (synthesis, consensus, conflicts)
+  - [x] Evidence-based recommendations from RAG
+  - [x] Safety considerations and monitoring requirements
+- [x] Improved evidence summary to mention guideline support
+- [x] Added fallback handling when RAG processing fails 
 
 Must haves:
 - [ ] Safety considerations (e.g. label site as PoC)
 - [ ] function calls for dose calulations
 
 Additional features/considerations
+- [ ] html link to guidelines
 - [ ] different regions
 - [ ] agentic search
 - [ ] reranking

@@ -41,6 +41,7 @@ Plan:
 - Plan as per local guidelines for croup`);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [ragInfo, setRagInfo] = useState<any>(null);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,6 +65,7 @@ Plan:
 
       if (data.success) {
         setResult(data.result);
+        setRagInfo(data.ragInfo || null);
       } else {
         setError(data.error || 'Failed to generate management plan');
       }
@@ -153,6 +155,149 @@ Plan:
                   <h4 className="font-bold text-gray-900">Confidence Score:</h4>
                   <p className="text-gray-700">{result.confidence}%</p>
                 </div>
+                
+                {/* Guidelines Used Section */}
+                {ragInfo && (
+                  <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                    <h4 className="font-bold text-blue-900 mb-3">📚 Therapeutic Guidelines Used:</h4>
+                    
+                    {/* RAG Metrics */}
+                    <div className="mb-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div className="bg-white rounded p-2 text-center">
+                          <div className="font-semibold text-blue-800">{ragInfo.retrievedChunks}</div>
+                          <div className="text-blue-600">Retrieved</div>
+                        </div>
+                        <div className="bg-white rounded p-2 text-center">
+                          <div className="font-semibold text-green-800">{ragInfo.filteredChunks}</div>
+                          <div className="text-green-600">Relevant</div>
+                        </div>
+                        <div className="bg-white rounded p-2 text-center">
+                          <div className="font-semibold text-purple-800">{ragInfo.retrievalMetrics?.processingTime || 0}ms</div>
+                          <div className="text-purple-600">Processing</div>
+                        </div>
+                        <div className="bg-white rounded p-2 text-center">
+                          <div className="font-semibold text-orange-800">{ragInfo.retrievalMetrics?.averageRelevanceScore?.toFixed(1) || 0}</div>
+                          <div className="text-orange-600">Avg Score</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Guideline Sources */}
+                    {result.relevantGuidelines && result.relevantGuidelines.length > 0 && (
+                      <div className="mb-4">
+                        <h5 className="font-semibold text-blue-800 mb-2">Guideline Sources:</h5>
+                        <div className="space-y-2">
+                          {Array.from(new Set(result.relevantGuidelines.map((g: any) => g.metadata.source))).map((source: any, index: number) => (
+                            <div key={index} className="bg-white rounded p-2 flex items-center">
+                              <span className="text-blue-600 mr-2">📄</span>
+                              <span className="text-sm font-medium">{source}</span>
+                              <span className="ml-auto text-xs text-gray-500">
+                                {result.relevantGuidelines.filter((g: any) => g.metadata.source === source).length} chunks
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                                         )}
+
+                     {/* Retrieved Guideline Chunks */}
+                     {result.relevantGuidelines && result.relevantGuidelines.length > 0 && (
+                       <div className="mb-4">
+                         <h5 className="font-semibold text-blue-800 mb-2">Retrieved Guideline Chunks:</h5>
+                         <div className="space-y-2 max-h-40 overflow-y-auto">
+                           {result.relevantGuidelines.slice(0, 5).map((guideline: any, index: number) => (
+                             <div key={index} className="bg-white rounded p-2 text-xs border border-gray-200">
+                               <div className="flex items-start justify-between mb-1">
+                                 <span className="font-medium text-gray-800">
+                                   {guideline.metadata.header1 || guideline.metadata.header3 || 'Untitled'}
+                                 </span>
+                                 <span className="text-gray-500 text-xs">
+                                   {guideline.metadata.source}
+                                 </span>
+                               </div>
+                               <p className="text-gray-600 line-clamp-2">
+                                 {guideline.content.substring(0, 150)}...
+                               </p>
+                             </div>
+                           ))}
+                           {result.relevantGuidelines.length > 5 && (
+                             <div className="text-center text-xs text-gray-500">
+                               ... and {result.relevantGuidelines.length - 5} more chunks
+                             </div>
+                           )}
+                         </div>
+                       </div>
+                     )}
+
+                     {/* RAG Synthesis */}
+                    {ragInfo.synthesis && (
+                      <div className="mb-4">
+                        <h5 className="font-semibold text-blue-800 mb-2">Guideline Analysis:</h5>
+                        <div className="bg-white rounded p-3 text-sm">
+                          <p className="text-gray-700 mb-2">
+                            <strong>Synthesis:</strong> {ragInfo.synthesis.synthesis}
+                          </p>
+                          <p className="text-gray-700 mb-2">
+                            <strong>Consensus:</strong> {ragInfo.synthesis.consensus}
+                          </p>
+                          {ragInfo.synthesis.conflicts && ragInfo.synthesis.conflicts.length > 0 && (
+                            <div className="mb-2">
+                              <strong className="text-gray-700">Conflicts:</strong>
+                              <ul className="list-disc list-inside text-gray-600 ml-2 mt-1">
+                                {ragInfo.synthesis.conflicts.map((conflict: string, index: number) => (
+                                  <li key={index} className="text-xs">{conflict}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* RAG Recommendations */}
+                    {ragInfo.finalRecommendation && (
+                      <div>
+                        <h5 className="font-semibold text-blue-800 mb-2">Evidence-Based Recommendations:</h5>
+                        <div className="bg-white rounded p-3 text-sm">
+                          <p className="text-gray-700 mb-2">
+                            <strong>Guideline Analysis:</strong> {ragInfo.finalRecommendation.guidelineAnalysis}
+                          </p>
+                          <p className="text-gray-700 mb-2">
+                            <strong>Evidence Level:</strong> {ragInfo.finalRecommendation.evidenceLevel}
+                          </p>
+                          <p className="text-gray-700 mb-2">
+                            <strong>Confidence:</strong> {ragInfo.finalRecommendation.confidence}%
+                          </p>
+                          
+                          {ragInfo.finalRecommendation.recommendations && ragInfo.finalRecommendation.recommendations.length > 0 && (
+                            <div className="mb-2">
+                              <strong className="text-gray-700">Treatment Recommendations:</strong>
+                              <div className="space-y-1 mt-1">
+                                {ragInfo.finalRecommendation.recommendations.map((rec: any, index: number) => (
+                                  <div key={index} className="bg-green-50 rounded p-2 text-xs">
+                                    <strong>{rec.medication}</strong> - {rec.dose} {rec.frequency} ({rec.evidenceLevel})
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {ragInfo.finalRecommendation.safetyConsiderations && ragInfo.finalRecommendation.safetyConsiderations.length > 0 && (
+                            <div className="mb-2">
+                              <strong className="text-gray-700">Safety Considerations:</strong>
+                              <ul className="list-disc list-inside text-gray-600 ml-2 mt-1">
+                                {ragInfo.finalRecommendation.safetyConsiderations.map((item: string, index: number) => (
+                                  <li key={index} className="text-xs">{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}

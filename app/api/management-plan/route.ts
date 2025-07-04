@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AzureChatOpenAI } from '@langchain/azure-openai';
 import { Patient, ClinicalDecision, DoseCalculation } from '../../types/medical';
+import { RAGService } from '../../lib/rag-service';
 import {
   PATIENT_EXTRACTION_PROMPT,
   PATIENT_EXTRACTION_SYSTEM_PROMPT,
@@ -102,7 +103,25 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to determine condition and severity');
     }
 
-    // Step 3: Generate medication recommendations
+    // Step 3: Process RAG to retrieve relevant guidelines
+    let ragResult = null;
+    let relevantGuidelines: any[] = [];
+    try {
+      const ragService = new RAGService();
+      ragResult = await ragService.processRAG(
+        patient,
+        conditionData.condition,
+        conditionData.severity,
+        patient.presentingComplaint,
+        8 // Limit to 8 chunks for management plan
+      );
+      relevantGuidelines = ragResult.retrievedChunks;
+    } catch (ragError) {
+      console.error('RAG processing failed, continuing without guidelines:', ragError);
+      // Continue without RAG results
+    }
+
+    // Step 4: Generate medication recommendations
     const medicationPrompt = MEDICATION_RECOMMENDATIONS_PROMPT
       .replace('{patientInfo}', JSON.stringify(patient))
       .replace('{condition}', conditionData.condition)
@@ -134,7 +153,7 @@ export async function POST(request: NextRequest) {
       // Continue without medication recommendations
     }
 
-    // Step 4: Generate comprehensive management plan
+    // Step 5: Generate comprehensive management plan
     const managementPrompt = MANAGEMENT_PLAN_PROMPT
       .replace('{patientInfo}', JSON.stringify(patient))
       .replace('{condition}', conditionData.condition)
@@ -146,7 +165,7 @@ export async function POST(request: NextRequest) {
       ['human', managementPrompt]
     ]);
 
-    // Step 5: Calculate overall confidence
+    // Step 6: Calculate overall confidence
     const overallConfidence = Math.round(
       (conditionData.confidence + 
        (medicationRecommendations.length > 0 ? 
@@ -159,20 +178,36 @@ export async function POST(request: NextRequest) {
       patient,
       condition: conditionData.condition,
       severity: conditionData.severity,
-      relevantGuidelines: [], // Will be populated when we integrate with vector database
+      relevantGuidelines: relevantGuidelines,
       medicationRecommendations,
       managementPlan: managementResponse.content as string,
       confidence: overallConfidence,
-      evidenceSummary: `Based on clinical assessment of ${conditionData.condition} with ${conditionData.severity} severity.`,
+      evidenceSummary: ragResult 
+        ? `Based on clinical assessment of ${conditionData.condition} with ${conditionData.severity} severity, supported by ${relevantGuidelines.length} relevant therapeutic guidelines.`
+        : `Based on clinical assessment of ${conditionData.condition} with ${conditionData.severity} severity.`,
       warnings: medicationRecommendations.flatMap(med => med.warnings || []),
       timestamp: new Date()
     };
 
-    return NextResponse.json({
+    // Include RAG results in the response
+    const responseData: any = {
       success: true,
       result,
       timestamp: new Date().toISOString()
-    });
+    };
+
+    // Add RAG information if available
+    if (ragResult) {
+      responseData.ragInfo = {
+        retrievedChunks: ragResult.retrievedChunks.length,
+        filteredChunks: ragResult.filteredChunks.length,
+        synthesis: ragResult.synthesis,
+        finalRecommendation: ragResult.finalRecommendation,
+        retrievalMetrics: ragResult.retrievalMetrics
+      };
+    }
+
+    return NextResponse.json(responseData);
 
   } catch (error) {
     console.error('Management Plan API Error:', error);

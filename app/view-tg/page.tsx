@@ -3,6 +3,14 @@
 import { useState, useEffect } from 'react';
 import { VectorizedTherapeuticGuideline } from '../types/medical';
 
+interface GuidelineSource {
+  source: string;
+  count: number;
+  chunks: number;
+  references: string[];
+  headers: string[];
+}
+
 export default function ViewTherapeuticGuidelines() {
   const [guidelines, setGuidelines] = useState<VectorizedTherapeuticGuideline[]>([]);
   const [loading, setLoading] = useState(true);
@@ -10,10 +18,59 @@ export default function ViewTherapeuticGuidelines() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [guidelineSources, setGuidelineSources] = useState<GuidelineSource[]>([]);
+  const [showSourceSummary, setShowSourceSummary] = useState(false);
+  const [selectedSource, setSelectedSource] = useState<string>('');
 
   useEffect(() => {
     fetchGuidelines();
   }, []);
+
+  const analyzeGuidelineSources = (guidelines: VectorizedTherapeuticGuideline[]): GuidelineSource[] => {
+    const sourceMap = new Map<string, {
+      source: string;
+      count: number;
+      chunks: Set<number>;
+      references: string[];
+      headers: string[];
+    }>();
+
+    guidelines.forEach(guideline => {
+      const source = guideline.metadata.source;
+      const reference = guideline.metadata.reference;
+      const header = guideline.metadata.header1 || guideline.metadata.header3 || 'Untitled';
+
+      if (!sourceMap.has(source)) {
+        sourceMap.set(source, {
+          source,
+          count: 0,
+          chunks: new Set<number>(),
+          references: [],
+          headers: []
+        });
+      }
+
+      const sourceInfo = sourceMap.get(source)!;
+      sourceInfo.count++;
+      sourceInfo.chunks.add(guideline.metadata.chunk_id);
+      
+      if (!sourceInfo.references.includes(reference)) {
+        sourceInfo.references.push(reference);
+      }
+      
+      if (!sourceInfo.headers.includes(header)) {
+        sourceInfo.headers.push(header);
+      }
+    });
+
+    return Array.from(sourceMap.values()).map(source => ({
+      source: source.source,
+      count: source.count,
+      chunks: source.chunks.size,
+      references: source.references.slice(0, 5), // Limit to first 5 references
+      headers: source.headers.slice(0, 5) // Limit to first 5 headers
+    }));
+  };
 
   const fetchGuidelines = async (query?: string) => {
     try {
@@ -31,8 +88,13 @@ export default function ViewTherapeuticGuidelines() {
         throw new Error(data.error || 'Failed to fetch guidelines');
       }
 
-      setGuidelines(data.guidelines || []);
+      const fetchedGuidelines = data.guidelines || [];
+      setGuidelines(fetchedGuidelines);
       setTotalCount(data.total || 0);
+      
+      // Analyze sources
+      const sources = analyzeGuidelineSources(fetchedGuidelines);
+      setGuidelineSources(sources);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch guidelines');
     } finally {
@@ -89,7 +151,7 @@ export default function ViewTherapeuticGuidelines() {
 
           {/* Search Section */}
           <div className="mb-8">
-            <div className="flex gap-4">
+            <div className="flex gap-4 mb-4">
               <div className="flex-1">
                 <input
                   type="text"
@@ -126,6 +188,33 @@ export default function ViewTherapeuticGuidelines() {
                 </button>
               )}
             </div>
+            
+            {/* Source Filter */}
+            {guidelineSources.length > 0 && (
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium text-gray-700">Filter by Source:</label>
+                <select
+                  value={selectedSource}
+                  onChange={(e) => setSelectedSource(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white"
+                >
+                  <option value="">All Sources</option>
+                  {guidelineSources.map((source, index) => (
+                    <option key={index} value={source.source}>
+                      {source.source} ({source.count} items)
+                    </option>
+                  ))}
+                </select>
+                {selectedSource && (
+                  <button
+                    onClick={() => setSelectedSource('')}
+                    className="text-sm text-gray-600 hover:text-gray-800"
+                  >
+                    Clear Filter
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Stats */}
@@ -143,11 +232,77 @@ export default function ViewTherapeuticGuidelines() {
                   )}
                 </div>
                 <div className="text-sm text-green-600">
-                  Showing {guidelines.length} results
+                  Showing {guidelines.filter(g => !selectedSource || g.metadata.source === selectedSource).length} results
+                  {selectedSource && ` (filtered by ${selectedSource})`}
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Guideline Sources Summary */}
+          {guidelineSources.length > 0 && (
+            <div className="mb-6">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-blue-800">
+                    Guideline Sources ({guidelineSources.length})
+                  </h3>
+                  <button
+                    onClick={() => setShowSourceSummary(!showSourceSummary)}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    {showSourceSummary ? 'Hide Details' : 'Show Details'}
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {guidelineSources.map((source, index) => (
+                    <div key={index} className="bg-white rounded-lg p-4 border border-blue-200">
+                      <h4 className="font-semibold text-gray-900 mb-2 truncate" title={source.source}>
+                        {source.source}
+                      </h4>
+                      <div className="space-y-1 text-sm text-gray-600">
+                        <div className="flex justify-between">
+                          <span>Chunks:</span>
+                          <span className="font-medium">{source.chunks}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Total Items:</span>
+                          <span className="font-medium">{source.count}</span>
+                        </div>
+                      </div>
+                      
+                      {showSourceSummary && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <div className="text-xs text-gray-500 mb-2">
+                            <strong>References:</strong>
+                          </div>
+                          <div className="space-y-1">
+                            {source.references.map((ref, refIndex) => (
+                              <div key={refIndex} className="text-xs bg-gray-100 px-2 py-1 rounded">
+                                {ref}
+                              </div>
+                            ))}
+                          </div>
+                          
+                          <div className="text-xs text-gray-500 mb-2 mt-3">
+                            <strong>Headers:</strong>
+                          </div>
+                          <div className="space-y-1">
+                            {source.headers.map((header, headerIndex) => (
+                              <div key={headerIndex} className="text-xs bg-blue-100 px-2 py-1 rounded">
+                                {header}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Error Display */}
           {error && (
@@ -201,7 +356,9 @@ export default function ViewTherapeuticGuidelines() {
 
           {!loading && guidelines.length > 0 && (
             <div className="space-y-6">
-              {guidelines.map((guideline) => (
+              {guidelines
+                .filter(guideline => !selectedSource || guideline.metadata.source === selectedSource)
+                .map((guideline) => (
                 <div key={guideline.id} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
@@ -229,8 +386,8 @@ export default function ViewTherapeuticGuidelines() {
                   </div>
 
                   <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                      Source: {guideline.metadata.source}
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded font-medium">
+                      📚 {guideline.metadata.source}
                     </span>
                     <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
                       Chunk: {guideline.metadata.chunk_id}.{guideline.metadata.subchunk_id}
@@ -239,7 +396,7 @@ export default function ViewTherapeuticGuidelines() {
                       Length: {guideline.metadata.length} chars
                     </span>
                     <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                      Reference: {guideline.metadata.reference}
+                      Ref: {guideline.metadata.reference}
                     </span>
                   </div>
                 </div>
