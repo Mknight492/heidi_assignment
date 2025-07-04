@@ -311,7 +311,11 @@
   - [x] Updated management plan API to include guideline links in response
   - [x] Enhanced frontend to display clickable links for guideline sources
   - [x] Added topic and subtopic information display for linked guidelines
-  - [x] Implemented fallback for guidelines without available links 
+  - [x] Implemented fallback for guidelines without available links
+  - [x] **TARGETED LINKING**: Only show links for highly relevant chunks (relevance score >= 70)
+  - [x] Added visual indicators for highly relevant guidelines (⭐ icon, green border)
+  - [x] Display relevance scores for each guideline chunk
+  - [x] Prioritize links for chunks mentioned in final recommendations 
 
 Must haves:
 - [ ] Safety considerations (e.g. label site as PoC)

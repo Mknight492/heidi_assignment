@@ -252,14 +252,24 @@ export async function POST(request: NextRequest) {
          0)) / 2
     );
 
-    // Add guideline links to relevant guidelines
+    // Add guideline links only to highly relevant guidelines
     const guidelinesWithLinks = relevantGuidelines.map(guideline => {
-      const link = getGuidelineLink(guideline.metadata.source);
+      // Only add links to chunks with high relevance score (>= 70) or if they're mentioned in recommendations
+      const hasHighRelevance = guideline.relevanceScore && guideline.relevanceScore >= 70;
+      const isMentionedInRecommendations = ragResult?.finalRecommendation?.guidelineSources?.some(
+        source => source.toLowerCase().includes(guideline.metadata.source.toLowerCase())
+      );
+      
+      const shouldAddLink = hasHighRelevance || isMentionedInRecommendations;
+      const link = shouldAddLink ? getGuidelineLink(guideline.metadata.source) : null;
+      
       return {
         ...guideline,
         metadata: {
           ...guideline.metadata,
-          guidelineLink: link
+          guidelineLink: link,
+          isHighlyRelevant: hasHighRelevance,
+          relevanceScore: guideline.relevanceScore || 0
         }
       };
     });

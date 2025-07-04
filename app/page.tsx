@@ -195,10 +195,14 @@ Plan:
                             // Find the first guideline with this source to get the link
                             const firstGuideline = result.relevantGuidelines.find((g: any) => g.metadata.source === source);
                             const guidelineLink = firstGuideline?.metadata?.guidelineLink;
+                            const isHighlyRelevant = firstGuideline?.metadata?.isHighlyRelevant;
+                            const relevanceScore = firstGuideline?.metadata?.relevanceScore;
                             
                             return (
-                              <div key={index} className="bg-white rounded p-2 flex items-center">
-                                <span className="text-blue-600 mr-2">📄</span>
+                              <div key={index} className={`bg-white rounded p-2 flex items-center ${isHighlyRelevant ? 'border-l-4 border-green-500' : ''}`}>
+                                <span className={`mr-2 ${isHighlyRelevant ? 'text-green-600' : 'text-blue-600'}`}>
+                                  {isHighlyRelevant ? '⭐' : '📄'}
+                                </span>
                                 <div className="flex-1">
                                   {guidelineLink ? (
                                     <a 
@@ -219,6 +223,11 @@ Plan:
                                       {guidelineLink.topic} - {guidelineLink.subtopic}
                                     </div>
                                   )}
+                                  {relevanceScore && (
+                                    <div className="text-xs text-gray-500">
+                                      Relevance: {relevanceScore}/100
+                                    </div>
+                                  )}
                                 </div>
                                 <span className="ml-auto text-xs text-gray-500">
                                   {result.relevantGuidelines.filter((g: any) => g.metadata.source === source).length} chunks
@@ -237,24 +246,36 @@ Plan:
                          <div className="space-y-2 max-h-40 overflow-y-auto">
                            {result.relevantGuidelines.slice(0, 5).map((guideline: any, index: number) => {
                              const guidelineLink = guideline.metadata?.guidelineLink;
+                             const isHighlyRelevant = guideline.metadata?.isHighlyRelevant;
+                             const relevanceScore = guideline.metadata?.relevanceScore;
                              
                              return (
-                               <div key={index} className="bg-white rounded p-2 text-xs border border-gray-200">
+                               <div key={index} className={`bg-white rounded p-2 text-xs border ${isHighlyRelevant ? 'border-green-300 border-l-4 border-l-green-500' : 'border-gray-200'}`}>
                                  <div className="flex items-start justify-between mb-1">
                                    <div className="flex-1">
-                                     <span className="font-medium text-gray-800">
-                                       {guideline.metadata.header1 || guideline.metadata.header3 || 'Untitled'}
-                                     </span>
-                                     {guidelineLink && (
-                                       <a 
-                                         href={guidelineLink.url} 
-                                         target="_blank" 
-                                         rel="noopener noreferrer"
-                                         className="ml-1 text-blue-600 hover:text-blue-800 hover:underline"
-                                         title={`${guidelineLink.topic} - ${guidelineLink.subtopic}`}
-                                       >
-                                         🔗
-                                       </a>
+                                     <div className="flex items-center">
+                                       <span className="font-medium text-gray-800">
+                                         {guideline.metadata.header1 || guideline.metadata.header3 || 'Untitled'}
+                                       </span>
+                                       {isHighlyRelevant && (
+                                         <span className="ml-1 text-green-600 text-xs">⭐</span>
+                                       )}
+                                       {guidelineLink && (
+                                         <a 
+                                           href={guidelineLink.url} 
+                                           target="_blank" 
+                                           rel="noopener noreferrer"
+                                           className="ml-1 text-blue-600 hover:text-blue-800 hover:underline"
+                                           title={`${guidelineLink.topic} - ${guidelineLink.subtopic}`}
+                                         >
+                                           🔗
+                                         </a>
+                                       )}
+                                     </div>
+                                     {relevanceScore && (
+                                       <div className="text-xs text-gray-500 mt-1">
+                                         Relevance: {relevanceScore}/100
+                                       </div>
                                      )}
                                    </div>
                                    <span className="text-gray-500 text-xs">
