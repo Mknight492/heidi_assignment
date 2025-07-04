@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
     // Step 3: Process RAG to retrieve relevant guidelines for management and treatment
     console.log('Step 3: Retrieving relevant guidelines via RAG...');
     let ragResult = null;
-    let relevantGuidelines: any[] = [];
+    let essentialRAGInfo = null;
     try {
       const ragService = new RAGService();
       ragResult = await ragService.processRAG(
@@ -177,7 +177,8 @@ export async function POST(request: NextRequest) {
         patient.presentingComplaint,
         10 // Increased limit for comprehensive guidelines
       );
-      relevantGuidelines = ragResult.retrievedChunks;
+      // Get only essential information (summary + highly relevant chunks)
+      essentialRAGInfo = ragService.getEssentialRAGInfo(ragResult, 0.7);
     } catch (ragError) {
       console.error('RAG processing failed, continuing without guidelines:', ragError);
       // Continue without RAG results
@@ -190,11 +191,8 @@ export async function POST(request: NextRequest) {
       .replace('{condition}', conditionData.condition)
       .replace('{severity}', conditionData.severity)
       .replace('{medications}', '[]') // No medications yet, will be calculated in next step
-      .replace('{guidelines}', relevantGuidelines.length > 0 ? JSON.stringify(relevantGuidelines) : 'No specific guidelines available')
-      .replace('{guidelineSummary}', ragResult ? JSON.stringify({
-        synthesis: ragResult.synthesis,
-        finalRecommendation: ragResult.finalRecommendation
-      }) : 'No guideline summary available');
+      .replace('{guidelines}', essentialRAGInfo ? JSON.stringify(essentialRAGInfo.highlyRelevantChunks) : 'No specific guidelines available')
+      .replace('{guidelineSummary}', essentialRAGInfo ? JSON.stringify(essentialRAGInfo.summary) : 'No guideline summary available');
 
     const managementResponse = await model.invoke([
       ['system', MANAGEMENT_PLAN_SYSTEM_PROMPT],
@@ -207,11 +205,8 @@ export async function POST(request: NextRequest) {
       .replace('{patientInfo}', JSON.stringify(patient))
       .replace('{condition}', conditionData.condition)
       .replace('{severity}', conditionData.severity)
-      .replace('{guidelines}', relevantGuidelines.length > 0 ? JSON.stringify(relevantGuidelines) : 'No specific guidelines available')
-      .replace('{guidelineSummary}', ragResult ? JSON.stringify({
-        synthesis: ragResult.synthesis,
-        finalRecommendation: ragResult.finalRecommendation
-      }) : 'No guideline summary available')
+      .replace('{guidelines}', essentialRAGInfo ? JSON.stringify(essentialRAGInfo.highlyRelevantChunks) : 'No specific guidelines available')
+      .replace('{guidelineSummary}', essentialRAGInfo ? JSON.stringify(essentialRAGInfo.summary) : 'No guideline summary available')
       .replace('{managementPlan}', managementResponse.content as string);
 
     const medicationResponse = await model.invoke([
@@ -254,7 +249,8 @@ export async function POST(request: NextRequest) {
 
     // Group guidelines by source and find the most relevant chunk from each source
     const guidelinesBySource = new Map<string, any[]>();
-    relevantGuidelines.forEach(guideline => {
+    const relevantGuidelines = essentialRAGInfo ? essentialRAGInfo.highlyRelevantChunks : [];
+    relevantGuidelines.forEach((guideline: any) => {
       const source = guideline.metadata.source;
       if (!guidelinesBySource.has(source)) {
         guidelinesBySource.set(source, []);
@@ -300,8 +296,8 @@ export async function POST(request: NextRequest) {
       medicationRecommendations,
       managementPlan: managementResponse.content as string,
       confidence: overallConfidence,
-      evidenceSummary: ragResult 
-        ? `Based on clinical assessment of ${conditionData.condition} with ${conditionData.severity} severity, supported by ${relevantGuidelines.length} relevant therapeutic guidelines.`
+      evidenceSummary: essentialRAGInfo 
+        ? `Based on clinical assessment of ${conditionData.condition} with ${conditionData.severity} severity, supported by ${essentialRAGInfo.highlyRelevantChunks.length} highly relevant therapeutic guidelines.`
         : `Based on clinical assessment of ${conditionData.condition} with ${conditionData.severity} severity.`,
       warnings: medicationRecommendations.flatMap(med => med.warnings || []),
       timestamp: new Date()

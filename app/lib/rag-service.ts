@@ -151,6 +151,30 @@ export class RAGService {
   }
 
   /**
+   * Get essential RAG information for follow-up steps (summary + highly relevant chunks only)
+   */
+  getEssentialRAGInfo(ragResult: RAGResult, relevanceThreshold: number = 0.7): {
+    summary: {
+      synthesis: string;
+      finalRecommendation: RAGRecommendation;
+    };
+    highlyRelevantChunks: RAGGuidelineChunk[];
+  } {
+    // Get all chunks with relevance score above threshold, sorted by relevance
+    const highlyRelevantChunks = ragResult.filteredChunks
+      .filter(chunk => (chunk.relevanceScore || 0) > relevanceThreshold)
+      .sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+
+    return {
+      summary: {
+        synthesis: ragResult.synthesis.synthesis,
+        finalRecommendation: ragResult.finalRecommendation
+      },
+      highlyRelevantChunks
+    };
+  }
+
+  /**
    * Step 1: Retrieve relevant guideline chunks using semantic search
    */
   private async retrieveGuidelines(

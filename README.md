@@ -9,6 +9,7 @@ A Next.js application for uploading, storing, and searching Therapeutic Guidelin
 - **Vector Database**: Store embeddings in PostgreSQL with pgvector extension
 - **Clinical Decision Support**: Comprehensive management plan generation with structured processing flow
 - **Precise Dose Calculator**: Node.js-based medication dose calculations with pediatric safety checks
+- **Optimized RAG Pipeline**: Only passes summary and highly relevant chunks to follow-up steps for efficiency
 - **Modern UI**: Beautiful, responsive interface for uploading and viewing guidelines
 - **Batch Processing**: Efficient processing of large guideline files
 - **Real-time Search**: Instant semantic search results
@@ -151,6 +152,24 @@ Start by testing the embedding service:
    - Pediatric safety warnings
    - Confidence score
    - Safety checks and recommendations
+
+## 🔍 RAG Pipeline Optimization
+
+### Efficient Information Processing
+The RAG (Retrieval-Augmented Generation) system has been optimized to reduce token usage and improve processing efficiency:
+
+- **Essential Information Filtering**: All chunks with relevance score >0.7 are passed to follow-up steps
+- **Quality Control**: Chunks with relevance scores >0.7 are prioritized
+- **Summary Focus**: Synthesized information and final recommendations are emphasized
+- **Reduced Token Usage**: Significantly fewer tokens sent to LLM for follow-up processing
+- **Maintained Accuracy**: High-quality results with improved performance
+
+### Processing Flow
+1. **Retrieve**: Get relevant guideline chunks from vector database
+2. **Filter**: Rank and filter chunks by relevance score
+3. **Synthesize**: Create comprehensive summary and recommendations
+4. **Extract**: Pass only essential information (summary + top chunks) to next steps
+5. **Generate**: Create management plan and medication recommendations
 
 ## 💊 Dose Calculator
 

@@ -46,6 +46,11 @@
 - [x] Determine condition severity
 - [x] Calculate weight-based medication doses with evidence levels
 - [x] Generate comprehensive decision support plan
+- [x] **RAG OPTIMIZATION: Implemented essential information filtering**
+  - [x] Added `getEssentialRAGInfo()` method to RAG service
+  - [x] Only pass summary and highly relevant chunks (all chunks >0.7 relevance) to follow-up steps
+  - [x] Filter chunks by relevance score (>0.7) for quality control
+  - [x] Reduced token usage and improved processing efficiency
 - [ ] Vectorize local clinical guidelines with metadata
 - [ ] Implement semantic search for relevant guidelines
 - [ ] Context retrieval for decision support
