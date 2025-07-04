@@ -325,12 +325,12 @@
   - [x] **METADATA PRESERVATION**: Fixed RAG service to preserve original metadata fields while adding processed fields 
 
 Must haves:
-- [ ] Safety considerations (e.g. label site as PoC)
-- [ ] function calls for dose calulations
+- [x] Safety considerations (e.g. label site as PoC)
+- [x] function calls for dose calulations
 
 Additional features/considerations
-- [ ] html link to guidelines
-- [ ] using meta-data i.e. title in the vector search
+- [x] html link to guidelines
+- [x] using meta-data i.e. title in the vector search
 - [ ] different regions
 - [ ] agentic search
 - [ ] reranking

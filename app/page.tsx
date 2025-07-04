@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useState } from "react";
 import ReactMarkdown from 'react-markdown';
 
+// Check if we're in development mode
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 export default function Home() {
   const [transcript, setTranscript] = useState(`Patient: Jack T.
 DOB: 12/03/2022
@@ -80,16 +83,30 @@ Plan:
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start w-full max-w-4xl">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        
         <h1 className="text-2xl font-bold text-center">Heidi Medical AI Assignment</h1>
+        
+        {/* Disclaimer */}
+        <div className="w-full bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-yellow-800">
+                Important Disclaimer
+              </h3>
+              <div className="mt-2 text-sm text-yellow-700">
+                <p>
+                  This is a <strong>proof of concept</strong> demonstration and should <strong>NOT</strong> be used for clinical decision making. 
+                  This system is for educational and research purposes only. Always consult with qualified healthcare professionals 
+                  and follow established clinical guidelines for patient care decisions.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
         
         {/* Main Clinical Decision Support Interface */}
         <div className="w-full bg-white rounded-lg shadow-lg p-6">
@@ -357,127 +374,91 @@ Plan:
           )}
         </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <Link
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-green-600 text-white gap-2 hover:bg-green-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="/llm-test"
-          >
-            LLM Integration Test
-          </Link>
-          <Link
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-blue-600 text-white gap-2 hover:bg-blue-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="/api-demo"
-          >
-            Basic API Demo
-          </Link>
-          <Link
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
-            href="/users-demo"
-          >
-            Users CRUD Demo
-          </Link>
-          <Link
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-orange-600 text-white gap-2 hover:bg-orange-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="/db-test"
-          >
-            Database Test
-          </Link>
-        </div>
-
-        {/* Therapeutic Guidelines Section */}
-        <div className="w-full max-w-2xl">
-          <h2 className="text-lg font-semibold mb-4 text-center">Therapeutic Guidelines Database</h2>
+        {isDevelopment && (
           <div className="flex gap-4 items-center flex-col sm:flex-row">
             <Link
-              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-purple-600 text-white gap-2 hover:bg-purple-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
-              href="/upload-tg"
+              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-green-600 text-white gap-2 hover:bg-green-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+              href="/llm-test"
             >
-              Upload Guidelines
+              LLM Integration Test
             </Link>
             <Link
-              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-indigo-600 text-white gap-2 hover:bg-indigo-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
-              href="/view-tg"
+              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-blue-600 text-white gap-2 hover:bg-blue-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+              href="/api-demo"
             >
-              View Guidelines
+              Basic API Demo
             </Link>
             <Link
-              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-pink-600 text-white gap-2 hover:bg-pink-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
-              href="/test-embeddings"
+              className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
+              href="/users-demo"
             >
-              Test Embeddings
+              Users CRUD Demo
             </Link>
             <Link
-              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-teal-600 text-white gap-2 hover:bg-teal-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
-              href="/rag-test"
+              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-orange-600 text-white gap-2 hover:bg-orange-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+              href="/db-test"
             >
-              RAG Test
+              Database Test
             </Link>
           </div>
-        </div>
+        )}
 
-        <div className="text-center max-w-2xl">
-          <h2 className="text-lg font-semibold mb-4">What's included:</h2>
-          <ul className="text-sm space-y-2 text-left">
-            <li>• <strong>Clinical Decision Support</strong> - Main interface for patient transcript analysis</li>
-            <li>• <strong>LLM Integration Test</strong> - Test Azure OpenAI integration with full UI flow</li>
-            <li>• <strong>Basic API Demo</strong> - Simple GET and POST requests</li>
-            <li>• <strong>Users CRUD Demo</strong> - Full CRUD operations with a mock database</li>
-            <li>• <strong>Database Test</strong> - Test PostgreSQL connection and pgvector setup</li>
-            <li>• <strong>Therapeutic Guidelines Upload</strong> - Upload JSON files to vector database</li>
-            <li>• <strong>Therapeutic Guidelines View</strong> - Search and view uploaded guidelines</li>
-            <li>• <strong>RAG Test</strong> - Retrieval-Augmented Generation with therapeutic guidelines</li>
-            <li>• <strong>Embedding Service Test</strong> - Test Azure OpenAI text-embedding-3-large integration</li>
-            <li>• <strong>API Routes</strong> - Examples of different HTTP methods</li>
-            <li>• <strong>Frontend Integration</strong> - How to call APIs from React components</li>
-          </ul>
-        </div>
+        {/* Therapeutic Guidelines Section */}
+        {isDevelopment && (
+          <div className="w-full max-w-2xl">
+            <h2 className="text-lg font-semibold mb-4 text-center">Therapeutic Guidelines Database</h2>
+            <div className="flex gap-4 items-center flex-col sm:flex-row">
+              <Link
+                className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-purple-600 text-white gap-2 hover:bg-purple-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
+                href="/upload-tg"
+              >
+                Upload Guidelines
+              </Link>
+              <Link
+                className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-indigo-600 text-white gap-2 hover:bg-indigo-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
+                href="/view-tg"
+              >
+                View Guidelines
+              </Link>
+              <Link
+                className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-pink-600 text-white gap-2 hover:bg-pink-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
+                href="/test-embeddings"
+              >
+                Test Embeddings
+              </Link>
+              <Link
+                className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-teal-600 text-white gap-2 hover:bg-teal-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto"
+                href="/rag-test"
+              >
+                RAG Test
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {isDevelopment && (
+          <div className="text-center max-w-2xl">
+            <h2 className="text-lg font-semibold mb-4">What's included:</h2>
+            <ul className="text-sm space-y-2 text-left">
+              <li>• <strong>Clinical Decision Support</strong> - Main interface for patient transcript analysis</li>
+              <li>• <strong>LLM Integration Test</strong> - Test Azure OpenAI integration with full UI flow</li>
+              <li>• <strong>Basic API Demo</strong> - Simple GET and POST requests</li>
+              <li>• <strong>Users CRUD Demo</strong> - Full CRUD operations with a mock database</li>
+              <li>• <strong>Database Test</strong> - Test PostgreSQL connection and pgvector setup</li>
+              <li>• <strong>Therapeutic Guidelines Upload</strong> - Upload JSON files to vector database</li>
+              <li>• <strong>Therapeutic Guidelines View</strong> - Search and view uploaded guidelines</li>
+              <li>• <strong>RAG Test</strong> - Retrieval-Augmented Generation with therapeutic guidelines</li>
+              <li>• <strong>Embedding Service Test</strong> - Test Azure OpenAI text-embedding-3-large integration</li>
+              <li>• <strong>API Routes</strong> - Examples of different HTTP methods</li>
+              <li>• <strong>Frontend Integration</strong> - How to call APIs from React components</li>
+            </ul>
+          </div>
+        )}
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org Test →
-        </a>
+        <p className="text-sm text-gray-600">
+          Heidi Medical AI Assignment - Proof of Concept
+        </p>
       </footer>
     </div>
   );
