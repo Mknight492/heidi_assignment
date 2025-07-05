@@ -2,11 +2,70 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ReactMarkdown from 'react-markdown';
 
 // Check if we're in development mode
 const isDevelopment = process.env.NODE_ENV === 'development';
+
+// Progress stages for the clinical management plan generation
+const PROGRESS_STAGES = [
+  "Extracting patient data...",
+  "Analyzing clinical presentation...",
+  "Finding relevant therapeutic guidelines...",
+  "Retrieving evidence-based recommendations...",
+  "Calculating medication dosages...",
+  "Synthesizing management plan...",
+  "Finalizing recommendations..."
+];
+
+// Progress component with spinner
+const ProgressIndicator = ({ currentStage }: { currentStage: number }) => {
+  return (
+    <div className="w-full bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+      <div className="flex items-center justify-center mb-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+        <h3 className="text-lg font-semibold text-blue-800">Generating Clinical Management Plan</h3>
+      </div>
+      
+      <div className="space-y-3">
+        {PROGRESS_STAGES.map((stage, index) => (
+          <div key={index} className="flex items-center">
+            <div className={`w-4 h-4 rounded-full mr-3 flex-shrink-0 ${
+              index < currentStage 
+                ? 'bg-green-500' 
+                : index === currentStage 
+                ? 'bg-blue-500 animate-pulse' 
+                : 'bg-gray-300'
+            }`}></div>
+            <span className={`text-sm ${
+              index < currentStage 
+                ? 'text-green-700 font-medium' 
+                : index === currentStage 
+                ? 'text-blue-700 font-semibold' 
+                : 'text-gray-500'
+            }`}>
+              {stage}
+            </span>
+          </div>
+        ))}
+      </div>
+      
+      <div className="mt-4 pt-4 border-t border-blue-200">
+        <div className="flex justify-between text-xs text-blue-600 mb-1">
+          <span>Progress</span>
+          <span>{Math.round(((currentStage + 1) / PROGRESS_STAGES.length) * 100)}%</span>
+        </div>
+        <div className="w-full bg-blue-200 rounded-full h-2">
+          <div 
+            className="bg-blue-600 h-2 rounded-full transition-all duration-1000 ease-out"
+            style={{ width: `${((currentStage + 1) / PROGRESS_STAGES.length) * 100}%` }}
+          ></div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function Home() {
   const [transcript, setTranscript] = useState(`Patient: Jack T.
@@ -47,6 +106,31 @@ Plan:
   const [result, setResult] = useState<any>(null);
   const [ragInfo, setRagInfo] = useState<any>(null);
   const [error, setError] = useState('');
+  const [currentProgressStage, setCurrentProgressStage] = useState(0);
+
+  // Progress update effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (loading) {
+      interval = setInterval(() => {
+        setCurrentProgressStage(prev => {
+          if (prev < PROGRESS_STAGES.length - 1) {
+            return prev + 1;
+          }
+          return prev; // Stay at the last stage
+        });
+      }, 5800); // Update every 10 seconds
+    } else {
+      setCurrentProgressStage(0); // Reset when not loading
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +139,7 @@ Plan:
     setLoading(true);
     setError('');
     setResult(null);
+    setCurrentProgressStage(0);
 
     try {
       const response = await fetch('/api/management-plan', {
@@ -136,9 +221,13 @@ Plan:
               disabled={loading || !transcript.trim()}
               className="w-full bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
             >
-              {loading ? 'Generating Management Plan...' : 'Generate Management Plan'}
+              {loading ? PROGRESS_STAGES[currentProgressStage] || 'Generating Management Plan...' : 'Generate Management Plan'}
             </button>
           </form>
+
+          {loading && (
+            <ProgressIndicator currentStage={currentProgressStage} />
+          )}
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
@@ -297,7 +386,7 @@ Plan:
                        </div>
                      )}
 
-                     {/* RAG Synthesis */}
+                    {/* RAG Synthesis */}
                     {ragInfo.synthesis && (
                       <div className="mb-4">
                         <h5 className="font-semibold text-blue-800 mb-2">Guideline Analysis:</h5>

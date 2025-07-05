@@ -8,6 +8,7 @@ A Next.js application for uploading, storing, and searching Therapeutic Guidelin
 - **Semantic Search**: Search guidelines using Azure OpenAI text-embedding-3-large
 - **Vector Database**: Store embeddings in PostgreSQL with pgvector extension
 - **Clinical Decision Support**: Comprehensive management plan generation with structured processing flow
+- **Progress Tracking**: Real-time progress indicator with spinner animation during plan generation
 - **Precise Dose Calculator**: Node.js-based medication dose calculations with pediatric safety checks
 - **Optimized RAG Pipeline**: Only passes summary and highly relevant chunks to follow-up steps for efficiency
 - **Modern UI**: Beautiful, responsive interface for uploading and viewing guidelines
@@ -135,7 +136,12 @@ Start by testing the embedding service:
    - Retrieve relevant guidelines via RAG
    - Generate comprehensive management plan
    - Calculate precise drug doses using Node.js dose calculator
-4. **Review results** including confidence scores and evidence levels
+4. **Monitor progress** with real-time updates every 10 seconds:
+   - Progress stages with visual indicators
+   - Spinner animation during processing
+   - Percentage completion bar
+   - Dynamic button text showing current stage
+5. **Review results** including confidence scores and evidence levels
 
 ### 5. Test Dose Calculator
 
@@ -167,6 +173,27 @@ The system automatically links relevant guidelines to their corresponding Therap
 
 ### Efficient Information Processing
 The RAG (Retrieval-Augmented Generation) system has been optimized to reduce token usage and improve processing efficiency:
+
+## 📊 Progress Tracking
+
+### Real-time Clinical Plan Generation
+The system provides comprehensive progress tracking during clinical management plan generation:
+
+- **Visual Progress Indicator**: Spinner animation with progress stages
+- **10-Second Updates**: Progress updates every 10 seconds during processing
+- **Stage Tracking**: 7 distinct stages from data extraction to final recommendations
+- **Percentage Completion**: Visual progress bar with percentage completion
+- **Dynamic UI**: Button text updates to show current processing stage
+- **Color-coded Status**: Green (completed), Blue (current), Gray (pending)
+
+### Progress Stages
+1. **Extracting patient data** - Parse clinical transcript for demographics and symptoms
+2. **Analyzing clinical presentation** - Assess condition and severity
+3. **Finding relevant therapeutic guidelines** - RAG retrieval from vector database
+4. **Retrieving evidence-based recommendations** - Filter and rank guideline chunks
+5. **Calculating medication dosages** - Precise dose calculations with safety checks
+6. **Synthesizing management plan** - Generate comprehensive treatment plan
+7. **Finalizing recommendations** - Complete with confidence scores and evidence levels
 
 - **Essential Information Filtering**: All chunks with relevance score >0.7 are passed to follow-up steps
 - **Quality Control**: Chunks with relevance scores >0.7 are prioritized
