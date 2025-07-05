@@ -4,6 +4,9 @@ A Next.js application for uploading, storing, and searching Therapeutic Guidelin
 
 ## 🚀 Features
 
+- **🤖 Agentic AI Processing**: Autonomous agents with function calling for dynamic clinical decision-making
+- **🔧 Specialized Medical Tools**: 6 specialized tools for patient extraction, condition assessment, and treatment planning
+- **🧠 Intelligent Workflow**: Agents autonomously select tools and adapt to different clinical scenarios
 - **Therapeutic Guidelines Upload**: Upload JSON files containing medical guideline chunks
 - **Semantic Search**: Search guidelines using Azure OpenAI text-embedding-3-large
 - **Vector Database**: Store embeddings in PostgreSQL with pgvector extension
@@ -14,6 +17,41 @@ A Next.js application for uploading, storing, and searching Therapeutic Guidelin
 - **Modern UI**: Beautiful, responsive interface for uploading and viewing guidelines
 - **Batch Processing**: Efficient processing of large guideline files
 - **Real-time Search**: Instant semantic search results
+
+## 🤖 Agentic AI Architecture
+
+This system now uses **autonomous AI agents** for clinical decision-making, replacing traditional fixed pipelines with intelligent, adaptive workflows:
+
+### Core Agent Features
+- **🔄 Dynamic Tool Selection**: Agents choose which tools to use based on clinical context
+- **🎯 Function Calling**: Structured tool invocation with Zod schema validation
+- **🔗 Multi-step Reasoning**: Agents coordinate multiple tools for comprehensive analysis
+- **🛡️ Safety-First Design**: Dedicated safety checking throughout the process
+- **📊 Transparent Processing**: Full visibility into agent decisions and tool usage
+
+### Specialized Medical Tools
+1. **Patient Extraction Tool**: Automatically extracts demographics, history, and clinical findings
+2. **Condition Assessment Tool**: Determines medical conditions and severity levels
+3. **Guideline Search Tool**: Finds relevant clinical guidelines using semantic search
+4. **Dose Calculation Tool**: Calculates precise medication doses with safety checks
+5. **Treatment Plan Tool**: Generates comprehensive, evidence-based treatment plans
+6. **Safety Check Tool**: Performs multi-layer safety validation and warnings
+
+### Agent Workflow
+```
+Clinical Transcript → Agent Coordinator → Tool Selection → Results Integration → Clinical Decision
+                            ↓
+                    [Patient Extract] → [Condition Assess] → [Guideline Search] 
+                            ↓
+                    [Dose Calculate] → [Treatment Plan] → [Safety Check]
+```
+
+### Benefits Over Traditional Approaches
+- **Adaptive**: Automatically adjusts to different clinical scenarios
+- **Intelligent**: Makes informed decisions about which tools to use
+- **Comprehensive**: Ensures all necessary steps are completed
+- **Safe**: Built-in safety checks and validation at every step
+- **Scalable**: Easy to add new tools and capabilities
 
 ## 📋 Prerequisites
 

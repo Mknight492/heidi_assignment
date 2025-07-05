@@ -370,7 +370,7 @@ Additional features/considerations
 - [x] html link to guidelines
 - [x] using meta-data i.e. title in the vector search
 - [x] improved RAG speed.
-- [ ] agentic search
+- [x] agentic search ✅ **IMPLEMENTED**
 - [ ] reranking
 - [ ] different regions
 - [ ] medication specific guidelines
@@ -380,3 +380,51 @@ Additional features/considerations
 - [ ] model router
 - [ ] comparison tool for making changes
 - [ ] test suite
+
+## Phase 8: Agentic Enhancement ✅ **COMPLETED**
+### Agentic LLM Implementation - Autonomous Clinical Decision Support
+- [x] **Medical Agent Tools**: Created 6 specialized tools for clinical decision-making
+  - [x] `patientExtractionTool` - Extract patient demographics and clinical data
+  - [x] `conditionAssessmentTool` - Assess medical conditions and severity
+  - [x] `guidelineSearchTool` - Search for relevant clinical guidelines
+  - [x] `doseCalculationTool` - Calculate medication doses with safety checks
+  - [x] `treatmentPlanTool` - Generate comprehensive treatment plans
+  - [x] `safetyCheckTool` - Perform comprehensive safety validations
+- [x] **Autonomous Agent Service**: Implemented `MedicalAgentService` with:
+  - [x] ChatOpenAI integration with Azure OpenAI
+  - [x] Function calling capabilities using LangChain agents
+  - [x] Dynamic tool selection based on clinical context
+  - [x] Autonomous multi-step processing workflows
+  - [x] Intelligent error handling and fallback mechanisms
+- [x] **Enhanced API Route**: Updated `/api/management-plan` to use agentic approach
+  - [x] Replaced sequential processing with autonomous agent-based workflow
+  - [x] Added agent execution tracking and debugging capabilities
+  - [x] Improved response format with agent processing information
+  - [x] Enhanced error handling for agentic workflows
+- [x] **Dependencies**: Added required LangChain packages
+  - [x] `@langchain/core` for tool definitions and prompts
+  - [x] `@langchain/openai` for OpenAI/Azure OpenAI integration
+  - [x] Updated agent tools to use Zod schemas for validation
+- [x] **Function Calling Integration**: Tools use structured schemas for:
+  - [x] Input validation with Zod
+  - [x] Proper error handling and recovery
+  - [x] Structured outputs for agent decision-making
+  - [x] Type safety and runtime validation
+- [x] **Agent Coordination**: Implemented sophisticated prompt engineering for:
+  - [x] Medical domain expertise and clinical workflow guidance
+  - [x] Tool selection and sequencing instructions
+  - [x] Safety-first approach with comprehensive checks
+  - [x] Evidence-based decision making protocols
+- [x] **Performance**: Optimized agentic processing with:
+  - [x] Maximum 10 iterations to prevent infinite loops
+  - [x] Early stopping when clinical decision is reached
+  - [x] Verbose logging for debugging and monitoring
+  - [x] Structured response parsing with fallback mechanisms
+
+### Benefits of Agentic Approach:
+- **Autonomous Decision Making**: Agent decides which tools to use and when
+- **Dynamic Workflow**: Adapts to different clinical scenarios automatically
+- **Improved Accuracy**: Multiple specialized tools working together
+- **Enhanced Safety**: Dedicated safety checking throughout the process
+- **Scalable**: Easy to add new tools and capabilities
+- **Transparent**: Full visibility into agent reasoning and tool usage
