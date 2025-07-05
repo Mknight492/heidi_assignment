@@ -1,4 +1,4 @@
-import { AzureChatOpenAI } from '@langchain/azure-openai';
+import { AzureChatOpenAI } from '@langchain/openai';
 import { Patient, ClinicalDecision, DoseCalculation } from '../types/medical';
 import { generateEmbedding } from './embeddings';
 import { searchTherapeuticGuidelines } from './database';
@@ -60,10 +60,20 @@ export class AgenticClinicalSystem {
       throw new Error('AZURE_OPENAI_DEPLOYMENT_NAME is not set');
     }
 
+    // Extract instance name from endpoint
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+    let instanceName = endpoint.replace('https://', '').replace('.openai.azure.com/', '');
+    
+    // If the endpoint contains .cognitiveservices.azure.com, extract just the resource name
+    if (instanceName.includes('.cognitiveservices.azure.com')) {
+      instanceName = instanceName.replace('.cognitiveservices.azure.com', '');
+    }
+
     this.model = new AzureChatOpenAI({
       azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-      azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+      azureOpenAIApiInstanceName: instanceName,
       azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
+      azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview',
       temperature: 0.2,
     });
   }
@@ -256,7 +266,8 @@ Your analysis should include:
 5. Key factors that influence management
 6. Areas where more information might be needed
 
-Provide your analysis in JSON format:
+IMPORTANT: Respond ONLY with valid JSON. Do not include any text before or after the JSON object.
+
 {
   "patientData": {
     "name": "Patient name",
@@ -300,16 +311,67 @@ Provide your analysis in JSON format:
   private parseAgentResponse(content: string): any {
     try {
       let cleanContent = content;
+      
+      // Remove markdown code blocks
       if (content.includes('```json')) {
         cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      } else if (content.includes('```')) {
+        cleanContent = content.replace(/```\n?/g, '');
       }
-      return JSON.parse(cleanContent.trim());
+      
+      // Clean up common LLM JSON formatting issues
+      cleanContent = cleanContent.trim();
+      
+      // Remove any text before the first {
+      const jsonStart = cleanContent.indexOf('{');
+      if (jsonStart > 0) {
+        cleanContent = cleanContent.substring(jsonStart);
+      }
+      
+      // Remove any text after the last }
+      const jsonEnd = cleanContent.lastIndexOf('}');
+      if (jsonEnd >= 0 && jsonEnd < cleanContent.length - 1) {
+        cleanContent = cleanContent.substring(0, jsonEnd + 1);
+      }
+      
+      // Fix common JSON issues
+      cleanContent = cleanContent
+        .replace(/,\s*}/g, '}') // Remove trailing commas
+        .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
+        .replace(/\n/g, ' ') // Replace newlines with spaces
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .replace(/"\s*:\s*"/g, '": "') // Fix spacing around colons
+        .replace(/,\s*"/g, ', "') // Fix spacing after commas
+        .replace(/\[\s*"/g, '["') // Fix spacing in arrays
+        .replace(/"\s*\]/g, '"]') // Fix spacing in arrays
+        .replace(/\{\s*"/g, '{"') // Fix spacing in objects
+        .replace(/"\s*\}/g, '"}'); // Fix spacing in objects
+      
+      return JSON.parse(cleanContent);
     } catch (error) {
       console.error('Failed to parse agent response:', error);
+      console.error('Original content:', content);
+      
+      // Return a structured fallback based on the content
       return {
-        clinicalReasoning: content,
-        confidence: 0.5,
-        needsMoreInfo: true
+        clinicalReasoning: content.length > 200 ? content.substring(0, 200) + '...' : content,
+        confidence: 0.3,
+        needsMoreInfo: true,
+        patientData: {
+          name: "Unknown",
+          age: 0,
+          weight: 0,
+          presentingComplaint: "Unable to parse",
+          history: "Unable to parse",
+          examination: "Unable to parse",
+          assessment: "Unable to parse"
+        },
+        likelyDiagnosis: "Unable to determine",
+        differentialDiagnoses: [],
+        severity: "unknown",
+        severityRationale: "Unable to determine",
+        keyFactors: [],
+        suggestedQueries: []
       };
     }
   }
@@ -326,7 +388,7 @@ class GuidelineSearchAgent {
     for (const term of searchTerms) {
       const startTime = Date.now();
       const embedding = await generateEmbedding(term);
-      const results = await searchTherapeuticGuidelines(embedding, 10);
+      const results = await searchTherapeuticGuidelines(embedding, 3); // Reduced from 10 to 3
       
       searchResults.push({
         query: term,
@@ -349,7 +411,7 @@ class GuidelineSearchAgent {
     for (const query of refinementQueries) {
       const startTime = Date.now();
       const embedding = await generateEmbedding(query);
-      const results = await searchTherapeuticGuidelines(embedding, 5);
+      const results = await searchTherapeuticGuidelines(embedding, 2); // Reduced from 5 to 2
       
       searchResults.push({
         query,
@@ -369,14 +431,24 @@ class GuidelineSearchAgent {
   ): Promise<AgentDecision> {
     const allGuidelines = searchResults.flatMap(sr => sr.results);
     
+    // Limit the number of guidelines to prevent token limit issues
+    const limitedGuidelines = allGuidelines.slice(0, 5).map(guideline => ({
+      id: guideline.id,
+      content: guideline.content.substring(0, 500), // Limit content length
+      metadata: {
+        title: guideline.metadata?.header4 || guideline.metadata?.header3 || guideline.metadata?.header1 || 'Unknown',
+        source: guideline.metadata?.source || 'Unknown'
+      }
+    }));
+
     const prompt = `
 You are a Guideline Search Agent specialized in finding and analyzing therapeutic guidelines.
 
 PATIENT ANALYSIS:
 ${JSON.stringify(patientAnalysis, null, 2)}
 
-RETRIEVED GUIDELINES:
-${JSON.stringify(allGuidelines.slice(0, 20), null, 2)}
+RETRIEVED GUIDELINES (Limited to prevent token overflow):
+${JSON.stringify(limitedGuidelines, null, 2)}
 
 Analyze these guidelines and provide:
 1. Relevance assessment of retrieved guidelines
@@ -385,7 +457,8 @@ Analyze these guidelines and provide:
 4. Gaps in available guidelines
 5. Need for additional searches
 
-Format as JSON:
+IMPORTANT: Respond ONLY with valid JSON. Do not include any text before or after the JSON object.
+
 {
   "guidelineAnalysis": "Analysis of retrieved guidelines",
   "keyRecommendations": ["Key treatment recommendations"],
@@ -427,7 +500,9 @@ Focus on:
 - Age-specific terms
 - Treatment-related terms
 
-Return as JSON array: ["term1", "term2", "term3"]
+IMPORTANT: Respond ONLY with a valid JSON array. Do not include any text before or after the array.
+
+["term1", "term2", "term3"]
 `;
 
     const response = await this.model.invoke([
@@ -446,16 +521,56 @@ Return as JSON array: ["term1", "term2", "term3"]
   private parseAgentResponse(content: string): any {
     try {
       let cleanContent = content;
+      
+      // Remove markdown code blocks
       if (content.includes('```json')) {
         cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      } else if (content.includes('```')) {
+        cleanContent = content.replace(/```\n?/g, '');
       }
-      return JSON.parse(cleanContent.trim());
+      
+      // Clean up common LLM JSON formatting issues
+      cleanContent = cleanContent.trim();
+      
+      // Remove any text before the first {
+      const jsonStart = cleanContent.indexOf('{');
+      if (jsonStart > 0) {
+        cleanContent = cleanContent.substring(jsonStart);
+      }
+      
+      // Remove any text after the last }
+      const jsonEnd = cleanContent.lastIndexOf('}');
+      if (jsonEnd >= 0 && jsonEnd < cleanContent.length - 1) {
+        cleanContent = cleanContent.substring(0, jsonEnd + 1);
+      }
+      
+      // Fix common JSON issues
+      cleanContent = cleanContent
+        .replace(/,\s*}/g, '}') // Remove trailing commas
+        .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
+        .replace(/\n/g, ' ') // Replace newlines with spaces
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .replace(/"\s*:\s*"/g, '": "') // Fix spacing around colons
+        .replace(/,\s*"/g, ', "') // Fix spacing after commas
+        .replace(/\[\s*"/g, '["') // Fix spacing in arrays
+        .replace(/"\s*\]/g, '"]') // Fix spacing in arrays
+        .replace(/\{\s*"/g, '{"') // Fix spacing in objects
+        .replace(/"\s*\}/g, '"}'); // Fix spacing in objects
+      
+      return JSON.parse(cleanContent);
     } catch (error) {
       console.error('Failed to parse agent response:', error);
+      console.error('Original content:', content);
+      
+      // Return a structured fallback based on the content
       return {
-        guidelineAnalysis: content,
-        confidence: 0.5,
-        needsMoreInfo: true
+        guidelineAnalysis: content.length > 200 ? content.substring(0, 200) + '...' : content,
+        confidence: 0.3,
+        needsMoreInfo: true,
+        keyRecommendations: [],
+        evidenceQuality: "Unable to determine",
+        gaps: [],
+        suggestedQueries: []
       };
     }
   }
@@ -484,7 +599,8 @@ Provide specialized medication analysis including:
 4. Alternative medications if first-line is contraindicated
 5. Monitoring requirements for selected medications
 
-Format as JSON:
+IMPORTANT: Respond ONLY with valid JSON. Do not include any text before or after the JSON object.
+
 {
   "medicationAnalysis": "Comprehensive medication analysis",
   "recommendedMedications": [
@@ -525,16 +641,56 @@ Format as JSON:
   private parseAgentResponse(content: string): any {
     try {
       let cleanContent = content;
+      
+      // Remove markdown code blocks
       if (content.includes('```json')) {
         cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      } else if (content.includes('```')) {
+        cleanContent = content.replace(/```\n?/g, '');
       }
-      return JSON.parse(cleanContent.trim());
+      
+      // Clean up common LLM JSON formatting issues
+      cleanContent = cleanContent.trim();
+      
+      // Remove any text before the first {
+      const jsonStart = cleanContent.indexOf('{');
+      if (jsonStart > 0) {
+        cleanContent = cleanContent.substring(jsonStart);
+      }
+      
+      // Remove any text after the last }
+      const jsonEnd = cleanContent.lastIndexOf('}');
+      if (jsonEnd >= 0 && jsonEnd < cleanContent.length - 1) {
+        cleanContent = cleanContent.substring(0, jsonEnd + 1);
+      }
+      
+      // Fix common JSON issues
+      cleanContent = cleanContent
+        .replace(/,\s*}/g, '}') // Remove trailing commas
+        .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
+        .replace(/\n/g, ' ') // Replace newlines with spaces
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .replace(/"\s*:\s*"/g, '": "') // Fix spacing around colons
+        .replace(/,\s*"/g, ', "') // Fix spacing after commas
+        .replace(/\[\s*"/g, '["') // Fix spacing in arrays
+        .replace(/"\s*\]/g, '"]') // Fix spacing in arrays
+        .replace(/\{\s*"/g, '{"') // Fix spacing in objects
+        .replace(/"\s*\}/g, '"}'); // Fix spacing in objects
+      
+      return JSON.parse(cleanContent);
     } catch (error) {
       console.error('Failed to parse agent response:', error);
+      console.error('Original content:', content);
+      
+      // Return a structured fallback based on the content
       return {
-        medicationAnalysis: content,
-        confidence: 0.5,
-        needsMoreInfo: true
+        medicationAnalysis: content.length > 200 ? content.substring(0, 200) + '...' : content,
+        confidence: 0.3,
+        needsMoreInfo: true,
+        recommendedMedications: [],
+        contraindications: [],
+        alternatives: [],
+        suggestedQueries: []
       };
     }
   }
@@ -563,7 +719,8 @@ Perform comprehensive safety analysis including:
 4. Red flags and warning signs
 5. When to escalate care or seek additional help
 
-Format as JSON:
+IMPORTANT: Respond ONLY with valid JSON. Do not include any text before or after the JSON object.
+
 {
   "safetyAnalysis": "Comprehensive safety assessment",
   "safetyChecks": ["Required safety checks"],
@@ -597,16 +754,57 @@ Format as JSON:
   private parseAgentResponse(content: string): any {
     try {
       let cleanContent = content;
+      
+      // Remove markdown code blocks
       if (content.includes('```json')) {
         cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      } else if (content.includes('```')) {
+        cleanContent = content.replace(/```\n?/g, '');
       }
-      return JSON.parse(cleanContent.trim());
+      
+      // Clean up common LLM JSON formatting issues
+      cleanContent = cleanContent.trim();
+      
+      // Remove any text before the first {
+      const jsonStart = cleanContent.indexOf('{');
+      if (jsonStart > 0) {
+        cleanContent = cleanContent.substring(jsonStart);
+      }
+      
+      // Remove any text after the last }
+      const jsonEnd = cleanContent.lastIndexOf('}');
+      if (jsonEnd >= 0 && jsonEnd < cleanContent.length - 1) {
+        cleanContent = cleanContent.substring(0, jsonEnd + 1);
+      }
+      
+      // Fix common JSON issues
+      cleanContent = cleanContent
+        .replace(/,\s*}/g, '}') // Remove trailing commas
+        .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
+        .replace(/\n/g, ' ') // Replace newlines with spaces
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .replace(/"\s*:\s*"/g, '": "') // Fix spacing around colons
+        .replace(/,\s*"/g, ', "') // Fix spacing after commas
+        .replace(/\[\s*"/g, '["') // Fix spacing in arrays
+        .replace(/"\s*\]/g, '"]') // Fix spacing in arrays
+        .replace(/\{\s*"/g, '{"') // Fix spacing in objects
+        .replace(/"\s*\}/g, '"}'); // Fix spacing in objects
+      
+      return JSON.parse(cleanContent);
     } catch (error) {
       console.error('Failed to parse agent response:', error);
+      console.error('Original content:', content);
+      
+      // Return a structured fallback based on the content
       return {
-        safetyAnalysis: content,
-        confidence: 0.5,
-        needsMoreInfo: true
+        safetyAnalysis: content.length > 200 ? content.substring(0, 200) + '...' : content,
+        confidence: 0.3,
+        needsMoreInfo: true,
+        safetyChecks: [],
+        riskFactors: [],
+        monitoringPlan: [],
+        escalationCriteria: [],
+        suggestedQueries: []
       };
     }
   }

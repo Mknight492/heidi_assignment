@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AzureChatOpenAI } from '@langchain/azure-openai';
+import { AzureChatOpenAI } from '@langchain/openai';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,11 +16,21 @@ export async function POST(request: NextRequest) {
       throw new Error('AZURE_OPENAI_DEPLOYMENT_NAME is not set');
     }
     
+    // Extract instance name from endpoint
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+    let instanceName = endpoint.replace('https://', '').replace('.openai.azure.com/', '');
+    
+    // If the endpoint contains .cognitiveservices.azure.com, extract just the resource name
+    if (instanceName.includes('.cognitiveservices.azure.com')) {
+      instanceName = instanceName.replace('.cognitiveservices.azure.com', '');
+    }
+
     // Initialize Azure OpenAI model
     const model = new AzureChatOpenAI({
       azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-      azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+      azureOpenAIApiInstanceName: instanceName,
       azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
+      azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview',
       temperature: 0.7,
     });
 

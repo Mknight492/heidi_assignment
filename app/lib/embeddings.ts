@@ -1,4 +1,4 @@
-import { AzureOpenAIEmbeddings } from '@langchain/azure-openai';
+import { AzureOpenAIEmbeddings } from '@langchain/openai';
 
 // Initialize Azure OpenAI embeddings model
 let embeddingsModel: AzureOpenAIEmbeddings | null = null;
@@ -16,9 +16,18 @@ function getEmbeddingsModel(): AzureOpenAIEmbeddings {
       throw new Error('AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME is not set');
     }
 
+    // Extract instance name from endpoint
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+    let instanceName = endpoint.replace('https://', '').replace('.openai.azure.com/', '');
+    
+    // If the endpoint contains .cognitiveservices.azure.com, extract just the resource name
+    if (instanceName.includes('.cognitiveservices.azure.com')) {
+      instanceName = instanceName.replace('.cognitiveservices.azure.com', '');
+    }
+
     embeddingsModel = new AzureOpenAIEmbeddings({
       azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
-      azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+      azureOpenAIApiInstanceName: instanceName,
       azureOpenAIApiDeploymentName: process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME,
       azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview',
       modelName: 'text-embedding-3-large',
