@@ -459,6 +459,50 @@ Plan:
           )}
         </div>
 
+        {/* Agentic Clinical System */}
+        <div className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg p-6 text-white">
+          <div className="text-center mb-4">
+            <h2 className="text-2xl font-bold mb-2">🤖 Advanced Agentic Clinical System</h2>
+            <p className="text-blue-100 mb-4">
+              Experience next-generation clinical decision making with multi-agent AI collaboration
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+              <div className="flex items-center mb-2">
+                <span className="text-2xl mr-2">🧠</span>
+                <h3 className="font-semibold">Multi-Agent Reasoning</h3>
+              </div>
+              <p className="text-sm text-blue-100">5 specialized AI agents collaborate for comprehensive analysis</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+              <div className="flex items-center mb-2">
+                <span className="text-2xl mr-2">🔍</span>
+                <h3 className="font-semibold">Dynamic Search</h3>
+              </div>
+              <p className="text-sm text-blue-100">Adaptive search strategies that evolve based on findings</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+              <div className="flex items-center mb-2">
+                <span className="text-2xl mr-2">🔄</span>
+                <h3 className="font-semibold">Iterative Refinement</h3>
+              </div>
+              <p className="text-sm text-blue-100">Continuous improvement through agent collaboration</p>
+            </div>
+          </div>
+          
+          <div className="text-center">
+            <Link
+              href="/agentic-clinical-test"
+              className="inline-flex items-center bg-white text-blue-600 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              <span className="mr-2">🚀</span>
+              Try Agentic Clinical System
+            </Link>
+          </div>
+        </div>
+
         {isDevelopment && (
           <div className="flex gap-4 items-center flex-col sm:flex-row">
             <Link
