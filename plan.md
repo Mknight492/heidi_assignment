@@ -6,7 +6,8 @@ Build a clinical decision support system that ingests clinical text, queries gui
 ## Phase 1: Foundation & Setup (2-3 hours)
 - ✅ **Frontend + Backend with CICD** - done
 - ✅ **Basic Next.js setup** - done
-- **Add LangChain dependencies** - `langchain`, `@langchain/openai`, `@langchain/community`
+- ✅ **Add LangChain dependencies** - `langchain`, `@langchain/openai`, `@langchain/community`
+- ✅ **Migrate to new Azure OpenAI integration** - Updated from deprecated `@langchain/azure-openai` to `@langchain/openai`
 - **Add vector database** - `@pinecone-database/pinecone` or `chromadb` for local development
 - **Add medical calculation libraries** - `medical-calculator` or custom dose calculation logic
 - **Environment setup** - `.env.local` for API keys
