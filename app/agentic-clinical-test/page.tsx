@@ -336,7 +336,7 @@ Plan:
                       <p className="font-medium text-gray-900 capitalize">{result.finalDecision.severity}</p>
                     </div>
                   </div>
-                  <div className="prose prose-sm max-w-none">
+                  <div className="prose prose-sm max-w-none text-gray-900">
                     <ReactMarkdown>{result.finalDecision.managementPlan}</ReactMarkdown>
                   </div>
                 </div>

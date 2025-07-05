@@ -80,6 +80,53 @@ async function processMedicationRecommendations(
   return processedRecommendations;
 }
 
+// Helper function to get initial guidelines without severity
+async function getInitialGuidelines(
+  patient: Patient,
+  condition: string,
+  presentingComplaint: string
+): Promise<any> {
+  try {
+    // Import the necessary functions
+    const { generateEmbedding } = await import('../../lib/embeddings');
+    const { searchTherapeuticGuidelines } = await import('../../lib/database');
+    
+    // Create a broader search query to get relevant guidelines
+    const searchQuery = `${condition} treatment guidelines clinical assessment severity criteria`;
+    const queryEmbedding = await generateEmbedding(searchQuery);
+    const guidelines = await searchTherapeuticGuidelines(queryEmbedding, 15);
+    
+    // Transform guidelines to match RAGGuidelineChunk format
+    const transformedChunks = guidelines.map((guideline: any) => ({
+      id: guideline.id,
+      content: guideline.content,
+      metadata: {
+        ...guideline.metadata,
+        title: guideline.metadata?.header4 || guideline.metadata?.header3 || guideline.metadata?.header1 || 'Unknown',
+        section: guideline.metadata?.header4 || guideline.metadata?.header3 || 'Unknown',
+        evidenceLevel: 'Unknown',
+        version: 'Unknown',
+        date: 'Unknown'
+      }
+    }));
+
+    return {
+      retrievedChunks: guidelines,
+      filteredChunks: transformedChunks.slice(0, 10), // Get top 10 most relevant
+      synthesis: {
+        synthesis: `Retrieved ${transformedChunks.length} relevant guidelines for ${condition}`,
+        conflicts: [],
+        consensus: 'Guidelines retrieved for condition assessment',
+        patientSpecific: 'Guidelines will be used for severity determination',
+        finalRecommendations: 'Use guidelines to assess severity criteria'
+      }
+    };
+  } catch (error) {
+    console.error('Error getting initial guidelines:', error);
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { transcript } = await request.json();
@@ -134,20 +181,35 @@ export async function POST(request: NextRequest) {
       let content = patientResponse.content as string;
       
       if (content.includes('```json')) {
-        content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        // Extract content between ```json and ```
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          content = jsonMatch[1];
+        } else {
+          // Fallback: remove ```json and ``` markers
+          content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        }
       } else if (content.includes('```')) {
-        content = content.replace(/```\n?/g, '');
+        // Extract content between ``` markers
+        const codeMatch = content.match(/```\s*([\s\S]*?)\s*```/);
+        if (codeMatch) {
+          content = codeMatch[1];
+        } else {
+          // Fallback: remove ``` markers
+          content = content.replace(/```\n?/g, '');
+        }
       }
       
       content = content.trim();
       patient = JSON.parse(content);
     } catch (parseError) {
       console.error('Failed to parse patient data:', patientResponse.content);
+      console.error('Parse error:', parseError);
       throw new Error('Failed to extract patient data from transcript');
     }
 
-    // Step 2: Determine condition and severity
-    console.log('Step 2: Assessing condition and severity...');
+    // Step 2: Determine condition (without severity initially)
+    console.log('Step 2: Determining primary condition...');
     const conditionPrompt = CONDITION_ASSESSMENT_PROMPT
       .replace('{patientInfo}', JSON.stringify(patient))
       .replace('{transcript}', transcript);
@@ -162,46 +224,138 @@ export async function POST(request: NextRequest) {
       let content = conditionResponse.content as string;
       
       if (content.includes('```json')) {
-        content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        // Extract content between ```json and ```
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          content = jsonMatch[1];
+        } else {
+          // Fallback: remove ```json and ``` markers
+          content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        }
       } else if (content.includes('```')) {
-        content = content.replace(/```\n?/g, '');
+        // Extract content between ``` markers
+        const codeMatch = content.match(/```\s*([\s\S]*?)\s*```/);
+        if (codeMatch) {
+          content = codeMatch[1];
+        } else {
+          // Fallback: remove ``` markers
+          content = content.replace(/```\n?/g, '');
+        }
       }
       
       content = content.trim();
       conditionData = JSON.parse(content);
     } catch (parseError) {
       console.error('Failed to parse condition data:', conditionResponse.content);
+      console.error('Parse error:', parseError);
       throw new Error('Failed to determine condition and severity');
     }
 
-    // Step 3: Process RAG to retrieve relevant guidelines for management and treatment
-    console.log('Step 3: Retrieving relevant guidelines via RAG...');
+    // Step 3: Get initial guidelines based on condition (before severity assessment)
+    console.log('Step 3: Retrieving initial guidelines based on condition...');
+    let initialGuidelines = null;
+    let ragService: RAGService | null = null;
+    
+    try {
+      ragService = new RAGService();
+      initialGuidelines = await getInitialGuidelines(
+        patient,
+        conditionData.condition,
+        patient.presentingComplaint
+      );
+    } catch (ragError) {
+      console.error('Initial RAG processing failed, continuing without guidelines:', ragError);
+    }
+
+    // Step 4: Re-assess severity using guidelines for more accurate determination
+    console.log('Step 4: Re-assessing severity using clinical guidelines...');
+    const enhancedConditionPrompt = `
+Based on the patient information, transcript, and relevant clinical guidelines, determine the primary condition and severity with enhanced accuracy.
+
+Patient Info: {patientInfo}
+Transcript: {transcript}
+Relevant Guidelines: {guidelines}
+
+Consider the clinical criteria and severity indicators from the guidelines when determining severity.
+
+Return a JSON object with:
+- condition: string (primary diagnosis)
+- severity: "mild", "moderate", or "severe" (based on guideline criteria)
+- confidence: number (0-100)
+- reasoning: string (explanation of severity determination based on guidelines)
+
+Return ONLY the JSON object, no additional text.
+`.replace('{patientInfo}', JSON.stringify(patient))
+  .replace('{transcript}', transcript)
+  .replace('{guidelines}', initialGuidelines ? JSON.stringify(initialGuidelines.filteredChunks.slice(0, 5)) : 'No guidelines available');
+
+    const enhancedConditionResponse = await model.invoke([
+      ['system', CONDITION_ASSESSMENT_SYSTEM_PROMPT],
+      ['human', enhancedConditionPrompt]
+    ]);
+
+    let enhancedConditionData: { condition: string; severity: 'mild' | 'moderate' | 'severe'; confidence: number; reasoning?: string };
+    try {
+      let content = enhancedConditionResponse.content as string;
+      
+      if (content.includes('```json')) {
+        // Extract content between ```json and ```
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          content = jsonMatch[1];
+        } else {
+          // Fallback: remove ```json and ``` markers
+          content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        }
+      } else if (content.includes('```')) {
+        // Extract content between ``` markers
+        const codeMatch = content.match(/```\s*([\s\S]*?)\s*```/);
+        if (codeMatch) {
+          content = codeMatch[1];
+        } else {
+          // Fallback: remove ``` markers
+          content = content.replace(/```\n?/g, '');
+        }
+      }
+      
+      content = content.trim();
+      enhancedConditionData = JSON.parse(content);
+    } catch (parseError) {
+      console.error('Failed to parse enhanced condition data:', enhancedConditionResponse.content);
+      console.error('Parse error:', parseError);
+      // Fall back to original condition data
+      enhancedConditionData = conditionData;
+    }
+
+    // Step 5: Process refined RAG with determined severity
+    console.log('Step 5: Retrieving refined guidelines with determined severity...');
     let ragResult = null;
     let essentialRAGInfo = null;
     try {
-      const ragService = new RAGService();
-      ragResult = await ragService.processRAG(
-        patient,
-        conditionData.condition,
-        conditionData.severity,
-        patient.presentingComplaint,
-        10 // Increased limit for comprehensive guidelines
-      );
-      // Get only essential information (summary + highly relevant chunks)
-      essentialRAGInfo = ragService.getEssentialRAGInfo(ragResult, 0.7);
+      if (ragService) {
+        ragResult = await ragService.processRAG(
+          patient,
+          enhancedConditionData.condition,
+          enhancedConditionData.severity,
+          patient.presentingComplaint,
+          10 // Increased limit for comprehensive guidelines
+        );
+        // Get only essential information (summary + highly relevant chunks)
+        essentialRAGInfo = ragService.getEssentialRAGInfo(ragResult, 0.7);
+      }
     } catch (ragError) {
-      console.error('RAG processing failed, continuing without guidelines:', ragError);
+      console.error('Refined RAG processing failed, continuing without guidelines:', ragError);
       // Continue without RAG results
     }
 
     console.log(essentialRAGInfo?.highlyRelevantChunks.length);
 
-    // Step 4: Generate comprehensive management plan based on guidelines
-    console.log('Step 4: Generating management plan...');
+    // Step 6: Generate comprehensive management plan based on guidelines
+    console.log('Step 6: Generating management plan...');
     const managementPrompt = MANAGEMENT_PLAN_PROMPT
       .replace('{patientInfo}', JSON.stringify(patient))
-      .replace('{condition}', conditionData.condition)
-      .replace('{severity}', conditionData.severity)
+      .replace('{condition}', enhancedConditionData.condition)
+      .replace('{severity}', enhancedConditionData.severity)
       .replace('{medications}', '[]') // No medications yet, will be calculated in next step
       .replace('{guidelines}', essentialRAGInfo ? JSON.stringify(essentialRAGInfo.highlyRelevantChunks) : 'No specific guidelines available')
       .replace('{guidelineSummary}', essentialRAGInfo ? JSON.stringify(essentialRAGInfo.summary) : 'No guideline summary available');
@@ -211,12 +365,12 @@ export async function POST(request: NextRequest) {
       ['human', managementPrompt]
     ]);
 
-    // Step 5: Generate medication recommendations and calculate precise doses
-    console.log('Step 5: Generating medication recommendations and calculating doses...');
+    // Step 7: Generate medication recommendations and calculate precise doses
+    console.log('Step 7: Generating medication recommendations and calculating doses...');
     const medicationPrompt = MEDICATION_RECOMMENDATIONS_PROMPT
       .replace('{patientInfo}', JSON.stringify(patient))
-      .replace('{condition}', conditionData.condition)
-      .replace('{severity}', conditionData.severity)
+      .replace('{condition}', enhancedConditionData.condition)
+      .replace('{severity}', enhancedConditionData.severity)
       .replace('{guidelines}', essentialRAGInfo ? JSON.stringify(essentialRAGInfo.highlyRelevantChunks) : 'No specific guidelines available')
       .replace('{guidelineSummary}', essentialRAGInfo ? JSON.stringify(essentialRAGInfo.summary) : 'No guideline summary available')
       .replace('{managementPlan}', managementResponse.content as string);
@@ -231,15 +385,30 @@ export async function POST(request: NextRequest) {
       let content = medicationResponse.content as string;
       
       if (content.includes('```json')) {
-        content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        // Extract content between ```json and ```
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          content = jsonMatch[1];
+        } else {
+          // Fallback: remove ```json and ``` markers
+          content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        }
       } else if (content.includes('```')) {
-        content = content.replace(/```\n?/g, '');
+        // Extract content between ``` markers
+        const codeMatch = content.match(/```\s*([\s\S]*?)\s*```/);
+        if (codeMatch) {
+          content = codeMatch[1];
+        } else {
+          // Fallback: remove ``` markers
+          content = content.replace(/```\n?/g, '');
+        }
       }
       
       content = content.trim();
       rawMedicationRecommendations = JSON.parse(content);
     } catch (parseError) {
       console.error('Failed to parse medication data:', medicationResponse.content);
+      console.error('Parse error:', parseError);
       // Continue without medication recommendations
     }
 
@@ -247,13 +416,13 @@ export async function POST(request: NextRequest) {
     const medicationRecommendations = await processMedicationRecommendations(
       rawMedicationRecommendations,
       patient,
-      conditionData.condition,
-      conditionData.severity
+      enhancedConditionData.condition,
+      enhancedConditionData.severity
     );
 
-    // Step 6: Calculate overall confidence
+    // Step 8: Calculate overall confidence
     const overallConfidence = Math.round(
-      (conditionData.confidence + 
+      (enhancedConditionData.confidence + 
        (medicationRecommendations.length > 0 ? 
          medicationRecommendations.reduce((sum, med) => sum + med.confidence, 0) / medicationRecommendations.length : 
          0)) / 2
@@ -302,15 +471,15 @@ export async function POST(request: NextRequest) {
     // Construct the final result
     const result: ClinicalDecision = {
       patient,
-      condition: conditionData.condition,
-      severity: conditionData.severity,
+      condition: enhancedConditionData.condition,
+      severity: enhancedConditionData.severity,
       relevantGuidelines: guidelinesWithLinks,
       medicationRecommendations,
       managementPlan: managementResponse.content as string,
       confidence: overallConfidence,
       evidenceSummary: essentialRAGInfo 
-        ? `Based on clinical assessment of ${conditionData.condition} with ${conditionData.severity} severity, supported by ${essentialRAGInfo.highlyRelevantChunks.length} highly relevant therapeutic guidelines.`
-        : `Based on clinical assessment of ${conditionData.condition} with ${conditionData.severity} severity.`,
+        ? `Based on clinical assessment of ${enhancedConditionData.condition} with ${enhancedConditionData.severity} severity, supported by ${essentialRAGInfo.highlyRelevantChunks.length} highly relevant therapeutic guidelines. ${enhancedConditionData.reasoning ? `Severity determination reasoning: ${enhancedConditionData.reasoning}` : ''}`
+        : `Based on clinical assessment of ${enhancedConditionData.condition} with ${enhancedConditionData.severity} severity.`,
       warnings: medicationRecommendations.flatMap(med => med.warnings || []),
       timestamp: new Date()
     };
@@ -330,6 +499,16 @@ export async function POST(request: NextRequest) {
         synthesis: ragResult.synthesis,
         finalRecommendation: ragResult.finalRecommendation,
         retrievalMetrics: ragResult.retrievalMetrics
+      };
+    }
+
+    // Add information about the enhanced severity assessment
+    if (enhancedConditionData.reasoning) {
+      responseData.severityAssessment = {
+        originalSeverity: conditionData.severity,
+        enhancedSeverity: enhancedConditionData.severity,
+        reasoning: enhancedConditionData.reasoning,
+        guidelinesUsed: initialGuidelines ? initialGuidelines.filteredChunks.length : 0
       };
     }
 

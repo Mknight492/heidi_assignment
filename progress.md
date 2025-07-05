@@ -51,6 +51,12 @@
   - [x] Only pass summary and highly relevant chunks (all chunks >0.7 relevance) to follow-up steps
   - [x] Filter chunks by relevance score (>0.7) for quality control
   - [x] Reduced token usage and improved processing efficiency
+- [x] **ENHANCED SEVERITY ASSESSMENT: Get clinical guidelines before determining severity**
+  - [x] Modified management API to retrieve guidelines based on condition first
+  - [x] Use guidelines to enhance severity determination accuracy
+  - [x] Re-assess severity using evidence-based criteria from guidelines
+  - [x] Added reasoning field to explain severity determination
+  - [x] Improved clinical decision accuracy by using guideline criteria
 - [ ] Vectorize local clinical guidelines with metadata
 - [ ] Implement semantic search for relevant guidelines
 - [ ] Context retrieval for decision support

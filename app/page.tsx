@@ -120,7 +120,7 @@ Plan:
           }
           return prev; // Stay at the last stage
         });
-      }, 5800); // Update every 10 seconds
+      }, 6800); // Update every 10 seconds
     } else {
       setCurrentProgressStage(0); // Reset when not loading
     }

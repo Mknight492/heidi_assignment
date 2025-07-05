@@ -264,9 +264,23 @@ export class RAGService {
         
         // Remove markdown code blocks if present
         if (content.includes('```json')) {
-          content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+          // Extract content between ```json and ```
+          const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+          if (jsonMatch) {
+            content = jsonMatch[1];
+          } else {
+            // Fallback: remove ```json and ``` markers
+            content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+          }
         } else if (content.includes('```')) {
-          content = content.replace(/```\n?/g, '');
+          // Extract content between ``` markers
+          const codeMatch = content.match(/```\s*([\s\S]*?)\s*```/);
+          if (codeMatch) {
+            content = codeMatch[1];
+          } else {
+            // Fallback: remove ``` markers
+            content = content.replace(/```\n?/g, '');
+          }
         }
         
         // Trim whitespace
@@ -275,6 +289,7 @@ export class RAGService {
         filteredResults = JSON.parse(content);
       } catch (parseError) {
         console.error('Failed to parse filter results:', response.content);
+        console.error('Parse error:', parseError);
         // Fallback: return all chunks with default scores
         return chunks.map(chunk => ({
           ...chunk,
@@ -362,9 +377,23 @@ export class RAGService {
         
         // Remove markdown code blocks if present
         if (content.includes('```json')) {
-          content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+          // Extract content between ```json and ```
+          const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+          if (jsonMatch) {
+            content = jsonMatch[1];
+          } else {
+            // Fallback: remove ```json and ``` markers
+            content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+          }
         } else if (content.includes('```')) {
-          content = content.replace(/```\n?/g, '');
+          // Extract content between ``` markers
+          const codeMatch = content.match(/```\s*([\s\S]*?)\s*```/);
+          if (codeMatch) {
+            content = codeMatch[1];
+          } else {
+            // Fallback: remove ``` markers
+            content = content.replace(/```\n?/g, '');
+          }
         }
         
         // Trim whitespace
@@ -373,6 +402,7 @@ export class RAGService {
         synthesis = JSON.parse(content);
       } catch (parseError) {
         console.error('Failed to parse synthesis results:', response.content);
+        console.error('Parse error:', parseError);
         // Fallback synthesis
         synthesis = {
           synthesis: 'Synthesis failed due to parsing error. Using available guideline information.',
@@ -435,9 +465,23 @@ export class RAGService {
         
         // Remove markdown code blocks if present
         if (content.includes('```json')) {
-          content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+          // Extract content between ```json and ```
+          const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+          if (jsonMatch) {
+            content = jsonMatch[1];
+          } else {
+            // Fallback: remove ```json and ``` markers
+            content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+          }
         } else if (content.includes('```')) {
-          content = content.replace(/```\n?/g, '');
+          // Extract content between ``` markers
+          const codeMatch = content.match(/```\s*([\s\S]*?)\s*```/);
+          if (codeMatch) {
+            content = codeMatch[1];
+          } else {
+            // Fallback: remove ``` markers
+            content = content.replace(/```\n?/g, '');
+          }
         }
         
         // Trim whitespace
@@ -446,6 +490,7 @@ export class RAGService {
         recommendation = JSON.parse(content);
       } catch (parseError) {
         console.error('Failed to parse recommendation:', response.content);
+        console.error('Parse error:', parseError);
         // Fallback recommendation
         recommendation = {
           guidelineAnalysis: 'Recommendation parsing failed. Review individual guidelines.',

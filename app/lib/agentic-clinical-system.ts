@@ -314,9 +314,23 @@ IMPORTANT: Respond ONLY with valid JSON. Do not include any text before or after
       
       // Remove markdown code blocks
       if (content.includes('```json')) {
-        cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        // Extract content between ```json and ```
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          cleanContent = jsonMatch[1];
+        } else {
+          // Fallback: remove ```json and ``` markers
+          cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        }
       } else if (content.includes('```')) {
-        cleanContent = content.replace(/```\n?/g, '');
+        // Extract content between ``` markers
+        const codeMatch = content.match(/```\s*([\s\S]*?)\s*```/);
+        if (codeMatch) {
+          cleanContent = codeMatch[1];
+        } else {
+          // Fallback: remove ``` markers
+          cleanContent = content.replace(/```\n?/g, '');
+        }
       }
       
       // Clean up common LLM JSON formatting issues
@@ -388,7 +402,7 @@ class GuidelineSearchAgent {
     for (const term of searchTerms) {
       const startTime = Date.now();
       const embedding = await generateEmbedding(term);
-      const results = await searchTherapeuticGuidelines(embedding, 3); // Reduced from 10 to 3
+      const results = await searchTherapeuticGuidelines(embedding, 10); // Reduced from 10 to 3
       
       searchResults.push({
         query: term,
@@ -411,7 +425,7 @@ class GuidelineSearchAgent {
     for (const query of refinementQueries) {
       const startTime = Date.now();
       const embedding = await generateEmbedding(query);
-      const results = await searchTherapeuticGuidelines(embedding, 2); // Reduced from 5 to 2
+      const results = await searchTherapeuticGuidelines(embedding, 5); // Reduced from 5 to 2
       
       searchResults.push({
         query,
@@ -524,9 +538,23 @@ IMPORTANT: Respond ONLY with a valid JSON array. Do not include any text before 
       
       // Remove markdown code blocks
       if (content.includes('```json')) {
-        cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        // Extract content between ```json and ```
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          cleanContent = jsonMatch[1];
+        } else {
+          // Fallback: remove ```json and ``` markers
+          cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+        }
       } else if (content.includes('```')) {
-        cleanContent = content.replace(/```\n?/g, '');
+        // Extract content between ``` markers
+        const codeMatch = content.match(/```\s*([\s\S]*?)\s*```/);
+        if (codeMatch) {
+          cleanContent = codeMatch[1];
+        } else {
+          // Fallback: remove ``` markers
+          cleanContent = content.replace(/```\n?/g, '');
+        }
       }
       
       // Clean up common LLM JSON formatting issues

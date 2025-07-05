@@ -194,6 +194,12 @@ Build a clinical decision support system that ingests clinical text, queries gui
   - Iterative refinement through agent collaboration
   - Comprehensive safety monitoring and evidence synthesis
   - Full transparency into agent reasoning and decision-making process
+- ✅ **ENHANCED SEVERITY ASSESSMENT**: Improved clinical decision accuracy by using guidelines before severity determination
+  - Retrieve clinical guidelines based on condition first (before severity assessment)
+  - Use evidence-based criteria from guidelines to determine severity more accurately
+  - Re-assess severity using guideline-specific clinical criteria
+  - Provide reasoning for severity determination based on guideline evidence
+  - Enhanced confidence in clinical decisions through evidence-based assessment
 
 ## Phase 8: Agentic LLM Implementation (COMPLETED)
 

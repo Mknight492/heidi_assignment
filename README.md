@@ -174,6 +174,17 @@ The system automatically links relevant guidelines to their corresponding Therap
 ### Efficient Information Processing
 The RAG (Retrieval-Augmented Generation) system has been optimized to reduce token usage and improve processing efficiency:
 
+### Enhanced Severity Assessment
+The system now retrieves clinical guidelines **before** determining severity to improve accuracy:
+
+1. **Initial Condition Assessment**: Determine primary condition from clinical transcript
+2. **Guideline Retrieval**: Get relevant guidelines based on condition (without severity)
+3. **Enhanced Severity Assessment**: Use guideline criteria to determine severity more accurately
+4. **Refined Guidelines**: Retrieve specific guidelines for the determined severity
+5. **Evidence-Based Decisions**: Provide reasoning for severity determination based on guideline evidence
+
+This approach ensures that severity assessment is based on evidence-based clinical criteria rather than just the LLM's interpretation of the transcript.
+
 ## 📊 Progress Tracking
 
 ### Real-time Clinical Plan Generation
