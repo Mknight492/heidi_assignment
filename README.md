@@ -153,6 +153,16 @@ Start by testing the embedding service:
    - Confidence score
    - Safety checks and recommendations
 
+### 6. Guideline Links
+
+The system automatically links relevant guidelines to their corresponding Therapeutic Guidelines web pages:
+
+- **Automatic Mapping**: Source filenames (e.g., "Respiratory-Croup.md") are mapped to PDF files in the guideline database
+- **Direct Links**: Click on guideline sources to access the full Therapeutic Guidelines web page
+- **Topic Information**: Display shows topic (e.g., "Respiratory") and subtopic (e.g., "Croup") information
+- **Relevance Filtering**: Only highly relevant guidelines (score ≥70) show clickable links
+- **Visual Indicators**: ⭐ icon and green borders highlight the most relevant guidelines
+
 ## 🔍 RAG Pipeline Optimization
 
 ### Efficient Information Processing

@@ -9,11 +9,25 @@ export interface GuidelineLink {
 
 /**
  * Maps a guideline source filename to its corresponding URL and metadata
- * @param source The source filename (e.g., "Dermatology-Balanoposthitis.pdf")
+ * @param source The source filename (e.g., "Dermatology-Balanoposthitis.md" or "Dermatology-Balanoposthitis.pdf")
  * @returns GuidelineLink object with URL and metadata, or null if not found
  */
 export function getGuidelineLink(source: string): GuidelineLink | null {
-  // Try exact match first
+  // Convert .md to .pdf for lookup since the mapping contains .pdf files
+  const pdfSource = source.replace(/\.md$/i, '.pdf');
+  
+  // Try exact match with .pdf extension first
+  if (pdfSource in pdfToLinkMaps) {
+    const mapping = pdfToLinkMaps[pdfSource as keyof typeof pdfToLinkMaps];
+    return {
+      url: mapping.url,
+      topic: mapping.topic,
+      subtopic: mapping.subtopic,
+      section: mapping.section
+    };
+  }
+
+  // Try original source (in case it's already .pdf)
   if (source in pdfToLinkMaps) {
     const mapping = pdfToLinkMaps[source as keyof typeof pdfToLinkMaps];
     return {
@@ -25,10 +39,10 @@ export function getGuidelineLink(source: string): GuidelineLink | null {
   }
 
   // Try to find a partial match by removing file extensions and normalizing
-  const normalizedSource = source.replace(/\.pdf$/i, '').replace(/\.json$/i, '');
+  const normalizedSource = source.replace(/\.(pdf|md|json)$/i, '');
   
   for (const [filename, mapping] of Object.entries(pdfToLinkMaps)) {
-    const normalizedFilename = filename.replace(/\.pdf$/i, '').replace(/\.json$/i, '');
+    const normalizedFilename = filename.replace(/\.pdf$/i, '');
     
     if (normalizedFilename === normalizedSource) {
       return {

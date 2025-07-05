@@ -338,7 +338,7 @@
   - [x] Safety considerations and monitoring requirements
 - [x] Improved evidence summary to mention guideline support
 - [x] Added fallback handling when RAG processing fails
-- [x] **GUIDELINE LINKS**: Implemented linking to appropriate web pages for guideline sources
+  - [x] **GUIDELINE LINKS**: Implemented linking to appropriate web pages for guideline sources
   - [x] Created `guideline-links.ts` utility with PDF-to-links mapping functionality
   - [x] Added support for exact filename matching and partial matching
   - [x] Updated management plan API to include guideline links in response
@@ -350,7 +350,11 @@
   - [x] Display relevance scores for each guideline chunk
   - [x] Prioritize links for chunks mentioned in final recommendations
   - [x] **HEADER HIERARCHY**: Updated guideline content display to use lowest level header down to level 3 (header4 -> header3 -> header1)
-  - [x] **METADATA PRESERVATION**: Fixed RAG service to preserve original metadata fields while adding processed fields 
+  - [x] **METADATA PRESERVATION**: Fixed RAG service to preserve original metadata fields while adding processed fields
+  - [x] **PDF LINK MAPPING**: Fixed .md to .pdf filename conversion for guideline links
+  - [x] Updated `getGuidelineLink()` function to convert .md source filenames to .pdf for lookup in pdf-to-link-maps.json
+  - [x] Added support for both .md and .pdf source filenames in the mapping function
+  - [x] Tested successfully with croup and balanoposthitis cases - links now work correctly 
 
 Must haves:
 - [x] Safety considerations (e.g. label site as PoC)
