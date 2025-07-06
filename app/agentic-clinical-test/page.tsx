@@ -218,7 +218,7 @@ Plan:
                 onChange={(e) => setTranscript(e.target.value)}
                 placeholder="Enter the patient's clinical transcript..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
-                rows={12}
+                rows={16}
                 required
               />
             </div>
