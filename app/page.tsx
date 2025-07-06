@@ -13,9 +13,10 @@ const PROGRESS_STAGES = [
   "Extracting patient data...",
   "Analyzing clinical presentation...",
   "Finding relevant therapeutic guidelines...",
-  "Retrieving evidence-based recommendations...",
-  "Calculating medication dosages...",
+  "Assessing severity...",
+  "Guideline search for severity level...",
   "Synthesizing management plan...",
+  "Calculating medication dosages...",
   "Finalizing recommendations..."
 ];
 
@@ -120,7 +121,7 @@ Plan:
           }
           return prev; // Stay at the last stage
         });
-      }, 6800); // Update every 10 seconds
+      }, 5800); // Update every 10 seconds
     } else {
       setCurrentProgressStage(0); // Reset when not loading
     }
