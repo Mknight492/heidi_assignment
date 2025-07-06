@@ -17,6 +17,7 @@ Create a detailed management plan that includes:
 7. Expected outcomes and timeline
 
 The management plan should be evidence-based and incorporate relevant clinical guidelines where available. Use the guideline summary to inform your recommendations and ensure alignment with evidence-based practices.
+If the guidelines recommend 2 different treatment options, choose the one that is most likely to be effective and safe for the patient.
 
 Return a comprehensive, well-structured management plan as plain text.
 `;
